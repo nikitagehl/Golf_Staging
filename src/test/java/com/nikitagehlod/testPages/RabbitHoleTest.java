@@ -1,7 +1,8 @@
-package com.nikitagehlod.Pages;
+package com.nikitagehlod.testPages;
 
 import com.nikitagehlod.basetest.commonToAllTest;
 import com.nikitagehlod.pages.*;
+import com.nikitagehlod.utils.propertyReader;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -31,56 +32,31 @@ public class RabbitHoleTest  extends commonToAllTest {
 
         // Step 2
         loginPage.login(
-                "joshsmith@gmail.com",
-                "Tester@123");
+                propertyReader.readKey("ValidUsername"),
+                propertyReader.readKey( "ValidPass"));
 
         // Step 3
         rabbitHolePage.navigateToRabbitHole();
 
         // Step 4
+       // select filter by condition dropdowns
         rabbitHolePage.clickFilterButton();
-
-//        rabbitHolePage.selectFilter(
-//                "Very Easy");
-
-
         rabbitHolePage.selectFilter("Scoring Conditions", "Easy");
         rabbitHolePage.clickApply();
 
-//        rabbitHolePage.selectDropdownOption("Golfers Displayed", "Active Golfers");
-//        rabbitHolePage.selectDropdownOption("View", "Putting");
-
-
+        // select filters
 
         rabbitHolePage.selectRandomDropdownOption("View");
         rabbitHolePage.selectRandomDropdownOption("Golfers Displayed");
         rabbitHolePage.selectRandomDropdownOption("Time Frame");
 
-        // Step 5
-//        List<String> headers =
-//                rabbitHolePage.getTableHeaders();
-//
-//        System.out.println(
-//                "Headers: " + headers);
-
-        // Step 6
-
-        List<String> headers = rabbitHolePage.getVisibleHeaders();
-
-        Random random = new Random();
-
-        String header = headers.get(random.nextInt(headers.size()));
-
-        rabbitHolePage.clickPlusAndGetHeader(header);
 
 
-//        String header = rabbitHolePage.clickPlusAndGetHeader("SG:OTT");
+
+        String header = rabbitHolePage.clickRandomPlus();
+        System.out.println("Selected Header: " + header);
 
         System.out.println(header);
-
-//        rabbitHolePage.clickHeaderPlusIcon(
-//                "SG:TOT");
-
         rabbitHolePage.enterDescription(
                 "Automation Header");
 

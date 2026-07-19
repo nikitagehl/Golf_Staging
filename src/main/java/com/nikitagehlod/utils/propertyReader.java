@@ -7,7 +7,10 @@ import java.util.Properties;
 
 public class propertyReader {
 
+    private static String key;
+
     public static String readKey(String key){
+        propertyReader.key = key;
 
         try {
             FileInputStream fileInputStream = new FileInputStream(System.getProperty("user.dir")+"/src/main/java/Resources/data.properties");

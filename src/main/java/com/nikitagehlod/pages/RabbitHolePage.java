@@ -2,6 +2,7 @@ package com.nikitagehlod.pages;
 
 import com.nikitagehlod.Base.BasePage;
 import org.openqa.selenium.*;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -218,36 +219,46 @@ public class RabbitHolePage  extends BasePage {
 
     public void selectRandomDropdownOption(String dropdownLabel) {
 
-        // Open the dropdown
         driver.findElement(By.xpath(
                 "//label[normalize-space()='" + dropdownLabel + "']/following::button[1]"
         )).click();
 
+        // Wait until the dropdown is visible
+        By optionLocator = By.xpath(
+                "//div[contains(@class,'dropdown-menu') and contains(@class,'show')]//button");
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(optionLocator));
+
         // Get all options
-        List<WebElement> options = wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(
-                By.xpath("//div[contains(@class,'dropdown-menu') and contains(@class,'show')]//button")
-        ));
+        List<WebElement> options = driver.findElements(optionLocator);
 
-        // Remove the currently selected option if needed
-        if (options.size() > 1) {
-            Random random = new Random();
+        Random random = new Random();
+        int index = random.nextInt(options.size());
 
-            // Skip the first option (optional)
-            int index = random.nextInt(options.size() - 1) + 1;
+        WebElement option = options.get(index);
 
-            WebElement option = options.get(index);
+        // Scroll the selected option into view
+        ((JavascriptExecutor) driver)
+                .executeScript("arguments[0].scrollIntoView({block:'center'});", option);
 
-            System.out.println("Selected Option: " + option.getText());
+        wait.until(ExpectedConditions.elementToBeClickable(option));
 
-            option.click();
-        }
+        System.out.println("Selected Option : " + option.getText());
+        Actions actions = new Actions(driver);
 
+        actions.moveToElement(option).pause(Duration.ofMillis(300)).click().perform();
+
+
+
+
+
+//        option.click();
         By loader = By.cssSelector(".cmn-loader");
         wait.until(ExpectedConditions.invisibilityOfElementLocated(loader));
+
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        js.executeScript("window.scrollTo(0, 0);");
     }
-
-
-
     public void clickPlusAndGetHeader(String columnName) {
 
         WebElement header = driver.findElement(By.xpath(
@@ -269,6 +280,25 @@ public class RabbitHolePage  extends BasePage {
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].scrollIntoView({block:'center'});", addButton);
     }
+
+    public String clickRandomPlus() {
+
+        List<WebElement> headers = wait.until(
+                ExpectedConditions.visibilityOfAllElementsLocatedBy(
+                        By.xpath("//table//thead//th[.//img[@alt='Add Column to your custom report']]")));
+
+        Random random = new Random();
+        WebElement header = headers.get(random.nextInt(headers.size()));
+
+        String headerName = header.getText().trim();
+
+        header.findElement(By.xpath("//img[@alt='Add Column to your custom report']")).click();
+
+        return headerName;
+    }
+
+
+
 
     public List<String> getVisibleHeaders() {
 

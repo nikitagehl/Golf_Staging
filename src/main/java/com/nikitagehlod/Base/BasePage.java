@@ -1,10 +1,6 @@
 package com.nikitagehlod.Base;
-
-import com.nikitagehlod.driver.driverManager;
-import com.nikitagehlod.utils.propertyReader;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import com.nikitagehlod.driver.driverManager.*;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -18,11 +14,6 @@ public class BasePage {
         // If you want to call something before every Page Object Class call, Put your Code here");
         // Open File, Open Data Base Connection You can write code here
     }
-
-    public void  openGolfUrl(){
-        getDriver().get(propertyReader.readKey("url"));
-    }
-
     public void custom_wait(){
         try {
             Thread.sleep(3000);
