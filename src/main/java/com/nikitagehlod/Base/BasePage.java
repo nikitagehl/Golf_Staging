@@ -1,56 +1,145 @@
 package com.nikitagehlod.Base;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.time.Duration;
 
 import static com.nikitagehlod.driver.driverManager.getDriver;
 
+import java.time.Duration;
+import java.util.List;
+
+import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
 public class BasePage {
 
-    public BasePage() {
-        // If you want to call something before every Page Object Class call, Put your Code here");
-        // Open File, Open Data Base Connection You can write code here
+    protected WebDriver driver;
+    protected WebDriverWait wait;
+
+    public BasePage(WebDriver driver) {
+
+        this.driver = driver;
+
+        wait = new WebDriverWait(driver,
+                Duration.ofSeconds(10));
     }
-    public void custom_wait(){
+
+    // Click
+
+    public void click(By locator) {
+        wait.until(ExpectedConditions.elementToBeClickable(locator)).click();
+    }
+
+    public void click(WebElement element) {
+        wait.until(ExpectedConditions.elementToBeClickable(element)).click();
+    }
+
+    // Type
+
+    public void type(By locator, String value) {
+        WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+        element.clear();
+        element.sendKeys(value);
+    }
+
+    public void type(WebElement element, String value) {
+        wait.until(ExpectedConditions.visibilityOf(element));
+        element.clear();
+        element.sendKeys(value);
+    }
+
+    // Get Text
+
+    public String getText(By locator) {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator)).getText();
+    }
+
+    // Waits
+
+    public WebElement waitForVisibility(By locator) {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+    }
+
+    public WebElement waitForPresence(By locator) {
+        return wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+    }
+
+    public WebElement waitForClickable(By locator) {
+        return wait.until(ExpectedConditions.elementToBeClickable(locator));
+    }
+
+    // Loader
+
+    public void waitForLoader() {
+
+        By loader = By.cssSelector(".cmn-loader");
+
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(loader));
+    }
+
+    // Scroll
+
+    public void scrollIntoView(WebElement element) {
+
+        ((JavascriptExecutor) driver)
+                .executeScript(
+                        "arguments[0].scrollIntoView({block:'center'});",
+                        element);
+    }
+
+    public void scrollToTop() {
+
+        ((JavascriptExecutor) driver)
+                .executeScript("window.scrollTo(0,0)");
+    }
+
+    public void scrollToBottom() {
+
+        ((JavascriptExecutor) driver)
+                .executeScript("window.scrollTo(0,document.body.scrollHeight)");
+    }
+
+    // JavaScript Click
+
+    public void jsClick(WebElement element) {
+
+        ((JavascriptExecutor) driver)
+                .executeScript("arguments[0].click();", element);
+    }
+
+    // Safe Click
+
+    public void safeClick(WebElement element) {
+
+        scrollIntoView(element);
+
+        wait.until(ExpectedConditions.elementToBeClickable(element));
+
         try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+
+            element.click();
+
+        } catch (ElementClickInterceptedException e) {
+
+            jsClick(element);
         }
     }
 
-    public void clickElement(By by){
-        getDriver().findElement(by).click();
+    // Elements
+
+    public List<WebElement> getElements(By locator) {
+
+        return driver.findElements(locator);
     }
 
-    public void clickElement(WebElement by){
-        by.click();
+    public WebElement getElement(By locator) {
+
+        return driver.findElement(locator);
     }
 
-    public void enterElement(By by, String key){
-       getDriver().findElement(by).sendKeys(key);
+    // Exists
+
+    public boolean isElementPresent(By locator) {
+
+        return !driver.findElements(locator).isEmpty();
     }
 
-    public void enterElement(WebElement by, String key){
-        by.sendKeys(key);
-    }
-
-    public String getText(By by){
-       return getDriver().findElement(by).getText();
-    }
-
-    public WebElement presenceOfElement(By elementLocation) {
-        return new WebDriverWait(getDriver(), Duration.ofSeconds(20)).until(ExpectedConditions.presenceOfElementLocated(elementLocation));
-    }
-
-    public WebElement visibilityOfElement(By elementLocation) {
-        return new WebDriverWait(getDriver(), Duration.ofSeconds(20)).until(ExpectedConditions.visibilityOfElementLocated(elementLocation));
-    }
-
-    public WebElement getElement(By key) {
-        return getDriver().findElement(key);
-    }
 }

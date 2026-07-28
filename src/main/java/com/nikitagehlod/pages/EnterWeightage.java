@@ -1,9 +1,8 @@
 package com.nikitagehlod.pages;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import com.nikitagehlod.Base.BasePage;
+import io.qameta.allure.Description;
+import org.openqa.selenium.*;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -11,52 +10,20 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 import java.util.List;
 
-public class EnterWeightage {
+public class EnterWeightage extends BasePage {
 
     WebDriver driver;
 
 
     public EnterWeightage(WebDriver driver){
+        super(driver);
         this.driver = driver;
         PageFactory.initElements(driver, this);
     }
 
 
 
-    public void enterWeightage()  {
-
-
-         List<WebElement> weightInputs=   driver.findElements(By.xpath
-                ("//div[@class='weight-inp-box']//input"));
-
-        System.out.println(weightInputs.size());
-
-        int totalFields = weightInputs.size();
-        int value = 100 / (totalFields-1);
-        int remainder = 100 % (totalFields-1);
-
-        System.out.println(weightInputs);
-        for (int i = 0; i < totalFields -1 ; i++) {
-
-            int currentValue = value;
-
-            // Last field gets remaining value
-            if (i == totalFields - 1) {
-                currentValue += remainder;
-            }
-            WebElement input = weightInputs.get(i);
-            System.out.println(input);
-            input.clear();
-            input.sendKeys(String.valueOf(currentValue));
-        }
-
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+ @Description("Verify total weightagae should be 100")
     public String VerifyTotalWeight(){
         WebElement totalWeight = driver.findElement(
                 By.xpath("//input[@readonly and contains(@value,'100.00')]"));
@@ -68,39 +35,54 @@ public class EnterWeightage {
 
 
 
-
+@Description("Enter the weight on input field ")
     public void enterDynamicWeightage() {
 
-       List <WebElement> weightFields = driver.findElements(By.xpath("//div[@class='weight-inp-box']//input"));
+       List <WebElement> weightFields = driver.findElements(By.
+               xpath("//div[@class='weight-inp-box']//input"));
 
-        WebElement totalWeightField = driver.findElement(By.xpath("//input[@readonly and contains(@class,'text-danger')]"));
+
+        WebElement totalWeightField = driver.findElement(By.
+                xpath("//input[@readonly and contains(@class,'text-danger')]"));
         // Wait until all editable input fields are visible
         new WebDriverWait(driver, Duration.ofSeconds(10))
                 .until(ExpectedConditions.visibilityOfAllElements(weightFields));
 
         int fieldCount = weightFields.size() -1;
-
         if (fieldCount == 0) {
             throw new RuntimeException("No editable weight fields found.");
         }
-
         int baseValue = 100 / fieldCount;
         int remainder = 100 % fieldCount;
 
         for (int i = 0; i < fieldCount; i++) {
 
             int value = baseValue;
-
             // Add remaining value to last field
             if (i == fieldCount - 1) {
                 value += remainder;
             }
 
+
             WebElement input = weightFields.get(i);
 
+
+//            scrollIntoView(input);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript(
+                    "arguments[0].scrollIntoView({behavior:'instant', block:'center'});",
+                    input);
+
+            // Wait until clickable
+            new WebDriverWait(driver, Duration.ofSeconds(10))
+                    .until(ExpectedConditions.elementToBeClickable(input));
+
             input.click();
-            input.sendKeys(Keys.CONTROL + "a");
-            input.sendKeys(Keys.DELETE);
+
+//            input.sendKeys(Keys.CONTROL + "a");
+//            input.sendKeys(Keys.DELETE);
+            input.clear();
+
             input.sendKeys(String.valueOf(value));
         }
 

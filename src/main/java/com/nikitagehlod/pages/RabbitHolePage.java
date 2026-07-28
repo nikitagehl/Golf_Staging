@@ -18,18 +18,28 @@ public class RabbitHolePage  extends BasePage {
     WebDriver driver;
     WebDriverWait wait;
 
-    public RabbitHolePage(WebDriver driver) {
-
-        this.driver = driver;
+    public RabbitHolePage( WebDriver driver) {
+        super(driver);
+       this.driver= driver;
 
         wait = new WebDriverWait(driver,
-                Duration.ofSeconds(5));
+                Duration.ofSeconds(10));
 
         PageFactory.initElements(driver, this);
     }
 
     @FindBy(xpath = "//div[@class='btn btn-bar d-flex position-relative align-items-center']")
     WebElement filterButton;
+
+    private By createModelButton =
+            By.xpath("//a[text()='Create Model']");
+
+    public boolean isRabbitHoleDisplayed(){
+
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(createModelButton))
+                .isDisplayed();
+
+    }
 
     public void navigateToRabbitHole() {
 
@@ -50,15 +60,12 @@ public class RabbitHolePage  extends BasePage {
     }
 
     public void clickFilterButton() {
+        waitForLoader();
+        wait.until(
+                        ExpectedConditions.elementToBeClickable(
+                                filterButton))
+                .click();
 
-//        wait.until(
-//                        ExpectedConditions.elementToBeClickable(
-//                                filterButton))
-//                .click();
-        By loader = By.cssSelector(".cmn-loader");
-
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(loader));
-        filterButton.click();
     }
 
     public void selectFilter(String filterName) {
@@ -112,66 +119,19 @@ public class RabbitHolePage  extends BasePage {
 
     public void enterDescription(
             String description) {
-//
-//        JavascriptExecutor js = (JavascriptExecutor) driver;
-//
-//// Scroll down by 500 pixels
-//        js.executeScript("window.scrollBy(0,4500)");
-
-        driver.findElement(
-                        By.xpath(
-                                "//textarea[@placeholder='Enter Description']"))
-                .sendKeys(description);
-
-
-
-
-
-
-//
+        type(
+                By.xpath("//textarea[@placeholder='Enter Description']"),
+                description);
 
     }
 
     public void clickAdd() {
+        WebElement addButton = waitForVisibility(
+                By.xpath("//button[normalize-space()='ADD']"));
 
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        safeClick(addButton);
 
-        WebElement addButton = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//button[normalize-space()='ADD']")));
-
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-
-// Scroll button into center
-        js.executeScript("arguments[0].scrollIntoView({block:'center'});", addButton);
-
-// Wait for loader to disappear (if present)
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(
-                By.cssSelector(".cmn-loader")));
-
-// Wait until button is clickable
-        wait.until(ExpectedConditions.elementToBeClickable(addButton));
-
-        try {
-            addButton.click();
-        } catch (ElementClickInterceptedException e) {
-            js.executeScript("arguments[0].click();", addButton);
-        }
-
-        js.executeScript("window.scrollTo(0, 0);");
-
-//        By filter =
-//                By.xpath("//button[contains(.,'ADD')]");
-//        //input[starts-with(@value, '4')]
-//
-//        wait.until(
-//                        ExpectedConditions.elementToBeClickable(filter))
-//                .click();
-
-//        driver.findElement(
-//                        By.xpath(
-//                                "//button[contains(.,'ADD')]"))
-//                .click();
+        scrollToTop();
     }
 
     public boolean verifyToast() {
@@ -189,11 +149,7 @@ public class RabbitHolePage  extends BasePage {
                         By.xpath("//button[normalize-space()='Apply']")
                 )
                 .click();
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        waitForLoader();
     }
 
     public void selectDropdownOption(String dropdownLabel, String optionText) {
@@ -207,21 +163,21 @@ public class RabbitHolePage  extends BasePage {
         driver.findElement(By.xpath(
                 "//div[contains(@class,'dropdown-menu') and contains(@class,'show')]//button[normalize-space()='" + optionText + "']"
         )).click();
-        By loader = By.cssSelector(".cmn-loader");
-
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(loader));
+        waitForLoader();
 
     }
 
-    // to select view, timeframe dynamically
-
-
-
     public void selectRandomDropdownOption(String dropdownLabel) {
 
-        driver.findElement(By.xpath(
-                "//label[normalize-space()='" + dropdownLabel + "']/following::button[1]"
-        )).click();
+        waitForLoader();
+
+        WebElement dropdown = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//label[normalize-space()='" + dropdownLabel + "']/following::button[1]")
+                ));
+        scrollIntoView(dropdown);
+
+        dropdown.click();
 
         // Wait until the dropdown is visible
         By optionLocator = By.xpath(
@@ -231,33 +187,19 @@ public class RabbitHolePage  extends BasePage {
 
         // Get all options
         List<WebElement> options = driver.findElements(optionLocator);
-
         Random random = new Random();
         int index = random.nextInt(options.size());
-
         WebElement option = options.get(index);
 
         // Scroll the selected option into view
-        ((JavascriptExecutor) driver)
-                .executeScript("arguments[0].scrollIntoView({block:'center'});", option);
-
+        scrollIntoView(option);
         wait.until(ExpectedConditions.elementToBeClickable(option));
-
         System.out.println("Selected Option : " + option.getText());
         Actions actions = new Actions(driver);
-
         actions.moveToElement(option).pause(Duration.ofMillis(300)).click().perform();
-
-
-
-
-
 //        option.click();
-        By loader = By.cssSelector(".cmn-loader");
-        wait.until(ExpectedConditions.invisibilityOfElementLocated(loader));
-
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("window.scrollTo(0, 0);");
+        waitForLoader();
+        scrollToTop();
     }
     public void clickPlusAndGetHeader(String columnName) {
 
@@ -292,8 +234,15 @@ public class RabbitHolePage  extends BasePage {
 
         String headerName = header.getText().trim();
 
-        header.findElement(By.xpath("//img[@alt='Add Column to your custom report']")).click();
+        List<WebElement> plusIcons = header.findElements(
+                By.xpath(".//img[@alt='Add Column to your custom report']"));
 
+        for (WebElement plus : plusIcons) {
+            if (plus.isDisplayed()) {
+                wait.until(ExpectedConditions.elementToBeClickable(plus)).click();
+                break;
+            }
+        }
         return headerName;
     }
 
@@ -318,4 +267,41 @@ public class RabbitHolePage  extends BasePage {
 
         return headers;
     }
+
+
+
+        private By noDataMessage =
+                By.xpath("//h5[contains(text(),'No records found')]");
+
+        public boolean isNoDataFound() {
+
+            return !getElements(noDataMessage).isEmpty();
+        }
+
+
+    public boolean verifyTableLoaded() {
+         By noDataMessage = By.xpath("//h5[contains(text(),'No records found')]");
+
+        // Table
+         By tableRows = By.xpath("//table//tbody/tr");
+
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+
+        wait.until(driver ->
+                driver.findElements(tableRows).size() > 0 ||
+                        driver.findElements(noDataMessage).size() > 0
+        );
+
+        if (isNoDataFound()) {
+            System.out.println("No records available.");
+            return false;
+        }
+
+        System.out.println("Table loaded successfully.");
+        return true;
+    }
+
+
+
+
 }

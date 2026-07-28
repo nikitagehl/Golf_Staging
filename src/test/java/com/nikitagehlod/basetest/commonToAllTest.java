@@ -10,7 +10,15 @@ import com.nikitagehlod.utils.propertyReader;
 import java.time.Duration;
 
 public class commonToAllTest {
+//    protected WebDriver driver;
+
+
+
     protected WebDriver driver;
+
+    public WebDriver getDriver() {
+        return driver;
+    }
 
     @BeforeMethod
     public void setup() {
@@ -37,4 +45,5 @@ public class commonToAllTest {
             driver.quit();
         }
     }
+
 }
