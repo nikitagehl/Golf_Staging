@@ -49,15 +49,7 @@ public class RabbitHolePage  extends BasePage {
 
     }
 
-    public void selectDropdown(String value) {
 
-        By option =
-                By.xpath("//*[contains(text(),'" + value + "')]");
-
-        wait.until(
-                        ExpectedConditions.elementToBeClickable(option))
-                .click();
-    }
 
     public void clickFilterButton() {
         waitForLoader();
@@ -66,55 +58,6 @@ public class RabbitHolePage  extends BasePage {
                                 filterButton))
                 .click();
 
-    }
-
-    public void selectFilter(String filterName) {
-
-        By filter =
-                By.xpath("//*[contains(text(),'"
-                        + filterName + "')]");
-        //input[starts-with(@value, '4')]
-
-        wait.until(
-                        ExpectedConditions.elementToBeClickable(filter))
-                .click();
-    }
-
-    public void selectFilter(String filterTitle, String option) {
-        String xpath = "//ul[contains(normalize-space(.),'" + filterTitle + "')]" +
-                "//li[.//span[normalize-space()='" + option + "']]" +
-                "//input[@type='checkbox']";
-
-        driver.findElement(By.xpath(xpath)).click();
-    }
-
-    public List<String> getTableHeaders() {
-
-        List<WebElement> headers =
-                driver.findElements(
-                        By.xpath("//table//th"));
-
-        return headers.stream()
-                .map(WebElement::getText)
-                .collect(Collectors.toList());
-    }
-
-    public void clickHeaderPlusIcon(
-            String headerName) {
-
-        String xpath =
-                "//th[contains(.,'"
-                        + headerName +
-                        "')]//*[local-name()='svg']";
-        WebElement element = driver.findElement(By.xpath("//button[text()='Sign In']"));
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].scrollIntoView(true);", element);
-
-
-        wait.until(
-                        ExpectedConditions.elementToBeClickable(
-                                By.xpath(xpath)))
-                .click();
     }
 
     public void enterDescription(
@@ -152,20 +95,6 @@ public class RabbitHolePage  extends BasePage {
         waitForLoader();
     }
 
-    public void selectDropdownOption(String dropdownLabel, String optionText) {
-
-        // Open the required dropdown
-        driver.findElement(By.xpath(
-                "//label[normalize-space()='" + dropdownLabel + "']/following::button[1]"
-        )).click();
-
-        // Click the required option
-        driver.findElement(By.xpath(
-                "//div[contains(@class,'dropdown-menu') and contains(@class,'show')]//button[normalize-space()='" + optionText + "']"
-        )).click();
-        waitForLoader();
-
-    }
 
     public void selectRandomDropdownOption(String dropdownLabel) {
 
@@ -198,31 +127,9 @@ public class RabbitHolePage  extends BasePage {
         Actions actions = new Actions(driver);
         actions.moveToElement(option).pause(Duration.ofMillis(300)).click().perform();
 //        option.click();
-        waitForLoader();
+//        waitForLoader();
         scrollToTop();
     }
-    public void clickPlusAndGetHeader(String columnName) {
-
-        WebElement header = driver.findElement(By.xpath(
-                "//th[contains(.,'" + columnName + "')]"));
-
-        String headerText = header.getText().trim();
-
-        WebElement plus = header.findElement(
-                By.xpath(".//img[@alt='Add Column to your custom report']"));
-        wait.until(
-                        ExpectedConditions.elementToBeClickable(
-                                (plus)))
-                .click();
-
-        WebElement addButton = new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//button[normalize-space()='ADD']")));
-
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].scrollIntoView({block:'center'});", addButton);
-    }
-
     public String clickRandomPlus() {
 
         List<WebElement> headers = wait.until(
@@ -245,30 +152,6 @@ public class RabbitHolePage  extends BasePage {
         }
         return headerName;
     }
-
-
-
-
-    public List<String> getVisibleHeaders() {
-
-        List<WebElement> elements = driver.findElements(
-                By.xpath("//table//thead//th"));
-
-        List<String> headers = new ArrayList<>();
-
-        for (WebElement e : elements) {
-
-            String text = e.getText().trim();
-
-            if (!text.isEmpty()) {
-                headers.add(text);
-            }
-        }
-
-        return headers;
-    }
-
-
 
         private By noDataMessage =
                 By.xpath("//h5[contains(text(),'No records found')]");

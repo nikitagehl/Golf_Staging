@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="All Test Suite">
+    <test verbose="2" preserve-order="true" name="C:/Users/Vishal/IdeaProjects/Golf
+    stage RH view/src/test/java/com/nikitagehlod/testPages/RabbitHoleTest.java">
+        <classes>
+
+            <class name="com.nikitagehlod.testPages.RabbitHoleTest">
+                <methods>
+                    <include name="verifyRabbitHoleFlow"/>
+                    <include name="changeReportStatus"/>
+                    <include name="DeleteReport"/>
+                    <include name="CopyReport"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+</suite>

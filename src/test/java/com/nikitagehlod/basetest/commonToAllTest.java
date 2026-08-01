@@ -1,9 +1,14 @@
 package com.nikitagehlod.basetest;
 
+import com.nikitagehlod.testPages.RabbitHoleTest;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import com.nikitagehlod.utils.propertyReader;
 
@@ -20,9 +25,9 @@ public class commonToAllTest {
         return driver;
     }
 
-    @BeforeMethod
+    @BeforeClass
     public void setup() {
-
+//        logger.info("Starting the test");
         driver = new ChromeDriver();
 
         driver.manage().window().maximize();
@@ -38,12 +43,16 @@ public class commonToAllTest {
         js.executeScript("document.body.style.zoom='80%'");
     }
 
-    @AfterMethod
+    @AfterClass
     public void tearDown() {
 
         if(driver != null) {
             driver.quit();
         }
     }
+
+
+
+
 
 }

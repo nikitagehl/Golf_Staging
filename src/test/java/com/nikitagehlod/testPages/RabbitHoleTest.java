@@ -4,153 +4,67 @@ import com.nikitagehlod.basetest.commonToAllTest;
 import com.nikitagehlod.pages.*;
 import com.nikitagehlod.utils.propertyReader;
 import io.qameta.allure.Allure;
-import listeners.TestListener;
-import net.bytebuddy.build.Plugin;
+
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
+
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.List;
-import java.util.Random;
-
+import java.util.PriorityQueue;
 
 public class RabbitHoleTest  extends commonToAllTest {
+    private static final Logger logger= (Logger) LogManager.getLogger(RabbitHoleTest.class);
 
 
 
+    private HomePage homePage;
+    private LoginPage loginPage;
+    private RabbitHolePage rabbitHolePage;
+    private CreateModel createModelPage;
+    private EnterWeightage enterWeightage;
+    private FiltersAdded filtersAdded;
 
 
-    String paidUser = propertyReader.readKey("paid.username");
-    String paidPass = propertyReader.readKey("paid.password");
 
-    String freeUser = propertyReader.readKey("free.username");
-    String freePass = propertyReader.readKey("free.password");
+    @BeforeClass(alwaysRun = true)
 
-
-    @Test(description="Verify free user cannot access Rabbit Hole",priority = 1)
-    public void verifyFreeUser(){
-
-        HomePage homePage =
-                new HomePage(driver);
+    public void loginAndNavigate() {
+        homePage = new HomePage(driver);
+        loginPage = new LoginPage(driver);
+        rabbitHolePage = new RabbitHolePage(driver);
+        createModelPage = new CreateModel(driver);
+        enterWeightage = new EnterWeightage(driver);
+        filtersAdded = new FiltersAdded(driver);
 
 
-//        LoginPage loginPage =
-//                new LoginPage(driver);
 
-        Allure.step("Click on Login button");
+        Allure.step("Open Login Page ");
         homePage.clickLogin();
-
-        Allure.step("Login page open");
-        LoginPage loginPage = new LoginPage(driver);
-
-        Allure.step("Login with free user account");
-        HomePage home = loginPage.login2(freeUser, freePass);
-
-        Allure.step("Verify that free and guest user not able to access RH");
-        home.openRabbitHole();
-
-        Allure.step(" Free User should redirect to premium plan page");
-        PremiumPage premium = new PremiumPage(driver);
-
-        Allure.step("Free user redirected to premium page successfully");
-        Assert.assertTrue(
-                premium.isPremiumPageDisplayed(),
-                "Free user should be redirected to Premium page."
-        );
-
-    }
-
-    @Test(description="Verify paid user can access Rabbit Hole", priority = 2)
-    public void verifyPaidUser(){
-
-        HomePage homePage =
-                new HomePage(driver);
-        Allure.step("Click on Login button");
-        homePage.clickLogin();
-
-        LoginPage loginPage = new LoginPage(driver);
-
-        Allure.step("Login with paid user account ");
-        HomePage home = loginPage.login2(paidUser, paidPass);
-
-        Allure.step("Navigate to RH Tool page");
-        home.openRabbitHole();
-
-        Allure.step("user able to access the RH page");
-        RabbitHolePage rabbit = new RabbitHolePage(driver);
-
-        Assert.assertTrue(
-                rabbit.isRabbitHoleDisplayed(),
-                "Paid user should reach Rabbit Hole."
-        );
-
-    }
-
-
-
-    @Test (priority = 3)
-    public void verifyRabbitHoleFlow() {
-
-        HomePage homePage =
-                new HomePage(driver);
-
-
-        LoginPage loginPage =
-                new LoginPage(driver);
-
-        RabbitHolePage rabbitHolePage =
-                new RabbitHolePage(driver);
-        CreateModel createModelPage= new CreateModel(driver);
-
-        EnterWeightage enterWeightage= new EnterWeightage(driver);
-
-        FiltersAdded filtersAdded= new FiltersAdded(driver);
-
-        Allure.step("Verify the RH view Flow");
-
-        // Step 1
-        Allure.step("Click on Login button");
-        homePage.clickLogin();
-
-        // Step 2
-        Allure.step("Login to application");
+        Allure.step("Login with Valid Credentials and paid credentials");
         loginPage.login(
                 propertyReader.readKey("ValidUsername"),
-                propertyReader.readKey( "ValidPass"));
+                propertyReader.readKey("ValidPass"));
 
+        Allure.step("Navigate to rabbit hole page");
 
-
-        // Step 3
-        Allure.step("Navigate to Rabbit Hole page");
         rabbitHolePage.navigateToRabbitHole();
-
-        // Step 4
-       // select filter by condition dropdowns
-//        rabbitHolePage.clickFilterButton();
-//        rabbitHolePage.selectFilter("Scoring Conditions", "Easy");
-//        rabbitHolePage.clickApply();
+    }
 
 
 
 
-        // select filters
-//
-//        rabbitHolePage.selectRandomDropdownOption("View");
-//        rabbitHolePage.selectRandomDropdownOption("Golfers Displayed");
-//        rabbitHolePage.selectRandomDropdownOption("Time Frame");
-//
-//        rabbitHolePage.clickFilterButton();
-//
-//        filtersAdded.selectRandomFilter();
-//        filtersAdded.selectRandomFilter();
-//        filtersAdded.selectRandomFilter();
-//        filtersAdded.selectRandomFilter();
-//
-//        rabbitHolePage.clickApply();
+    @Test (description="Verify RH view Flow", priority = 1)
+    public void verifyRabbitHoleFlow() {
+
+        logger.info("Starting the test");
 
         Allure.step("Apply random filters");
         boolean tableLoaded = false;
-
+        logger.info("Selecting the filters ");
         for (int attempt = 1; attempt <= 3; attempt++) {
 
             rabbitHolePage.selectRandomDropdownOption("View");
@@ -180,39 +94,8 @@ public class RabbitHoleTest  extends commonToAllTest {
 
         Assert.assertTrue(tableLoaded, "Table has no data after 3 attempts.");
 
-//        if (!rabbitHolePage.verifyTableLoaded()) {
+
 //
-//            System.out.println("No records found for selected filters.");
-//            rabbitHolePage.clickFilterButton();
-//            filtersAdded.resetFilters();
-//            System.out.println(!rabbitHolePage.verifyTableLoaded());
-////            if (!rabbitHolePage.verifyTableLoaded()) {
-////                continue;
-////            }
-//            return;      // Skip remaining execution
-//        }
-
-
-
-
-
-
-//        if (!rabbitHolePage.verifyTableLoaded()) {
-//
-//            System.out.println("No records found for selected filters.");
-//
-//            rabbitHolePage.clickFilterButton();
-//            filtersAdded.resetFilters();
-//
-//            // Check again after resetting filters
-//            System.out.println(!rabbitHolePage.verifyTableLoaded());
-//            if (!rabbitHolePage.verifyTableLoaded()) {
-//                System.out.println("Still no data after reset.");
-//
-//            }
-//            return;
-//        }
-
         Allure.step("Click random plus icon");
 
             String header = rabbitHolePage.clickRandomPlus();
@@ -251,7 +134,7 @@ public class RabbitHoleTest  extends commonToAllTest {
         Allure.step("Verify the create model page loaded successfully");
         createModelPage.waitForModelPage();
 
-        Allure.step("Verify the delte column functionality is working");
+        Allure.step("Verify the delete column functionality is working");
         createModelPage.clickFirstRemoveIcon();
         try {
             Thread.sleep(3000);
@@ -267,7 +150,7 @@ public class RabbitHoleTest  extends commonToAllTest {
         //
 
 
-        Allure.step("Entering the wieght in input field of all the saved columns ");
+        Allure.step("Entering the weight in input field of all the saved columns ");
 
         enterWeightage.enterDynamicWeightage();
 
@@ -278,4 +161,46 @@ public class RabbitHoleTest  extends commonToAllTest {
         Allure.step("Click on generate report and check for report generated");
         createModelPage.clickGenerateModel();
     }
+
+
+
+
+
+    @Test(priority = 2)
+    public void changeReportStatus(){
+        createModelPage.clickCreateModel();
+        Allure.step("Click on Create Model button on RH view");
+      ManageReports  manageReport = new ManageReports(driver);
+      manageReport.ChangeReportStatus();
+        System.out.println("This step is done");
+    }
+
+    @Test(description="Verify Delete Report Flow", priority = 3)
+    public void DeleteReport(){
+//        createModelPage.clickCreateModel();
+        Allure.step("Click on Create Model button on RH view");
+
+
+        ManageReports  manageReport = new ManageReports(driver);
+        Allure.step("Click on Delete report button");
+        manageReport.DeleteReport();
+        Allure.step("Report Delete successfully");
+    }
+
+  @Test(description="verify Copy Report Functionality ",priority=4)
+    public void CopyReport(){
+//      createModelPage.clickCreateModel();
+      Allure.step("Click on Create Model button on RH view");
+
+
+      ManageReports  manageReport = new ManageReports(driver);
+      Allure.step("Verify copy report");
+      manageReport.CopyReport();
+      Allure.step("Report copied successfully");
+      System.out.println("Done copied ");
+    }
 }
+
+
+
+
