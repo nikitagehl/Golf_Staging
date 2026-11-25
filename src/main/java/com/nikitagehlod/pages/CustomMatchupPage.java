@@ -253,7 +253,18 @@ public class CustomMatchupPage extends BasePage {
         WebElement control = slot(playerNo).findElement(By.cssSelector("[class*='playerName__control']"));
         safeClick(control);
         WebElement input = slot(playerNo).findElement(By.cssSelector("input.playerName__input"));
-        input.sendKeys(Keys.chord(Keys.CONTROL, "a"), Keys.BACK_SPACE);
+        // the click does not always open the menu (JS-click fallback) - Down arrow always does
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(2))
+                    .until(d -> !d.findElements(pickerOptions).isEmpty() || !d.findElements(pickerNoOptions).isEmpty());
+        } catch (TimeoutException notOpen) {
+            input.sendKeys(Keys.ARROW_DOWN);
+        }
+        // remove only TYPED text (never press Backspace on an empty box - it can clear the chosen player)
+        String typed = String.valueOf(input.getDomProperty("value"));
+        for (int i = 0; i < typed.length() && !"null".equals(typed); i++) {
+            input.sendKeys(Keys.BACK_SPACE);
+        }
         if (!text.isEmpty()) {
             input.sendKeys(text);
         }

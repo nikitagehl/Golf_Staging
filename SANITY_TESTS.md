@@ -21,6 +21,8 @@ Or right-click `testng-sanity.xml` in IntelliJ → Run.
 | `testPages/TournamentSimulatorTest.java` | Tournament Simulation tests |
 | `pages/CustomMatchupPage.java` | New: Custom Matchups – desktop table + mobile cards, sizes, dropdowns, player picker, odds, results, alerts |
 | `testPages/CustomMatchupTest.java` | Custom Matchups tests |
+| `pages/CourseDatabasePage.java` | New: Course Database – picker, facts, hole stats, metrics, past leaderboards, player search |
+| `testPages/CourseDatabaseTest.java` | Course Database tests |
 | `pages/SignUpPage.java` | New: sign-up form, validation toasts, change plan, legal links |
 | `pages/LoginPage.java` | Sign-in page: fields, toasts, show/hide password, forgot password, session check (`login()` / `login2()` kept) |
 | `utils/SiteUrls.java` | Base URL / path helper |
@@ -29,7 +31,7 @@ Or right-click `testng-sanity.xml` in IntelliJ → Run.
 | `basetest/commonToAllTest.java` | Added `openAsGuest(url)` |
 | `testPages/HomePageTest.java` | Home page tests |
 | `testPages/SignUpTest.java` | Sign-up tests |
-| `testng-sanity.xml` | Suite: Home + Sign Up + Login + Live Leaderboard + Tournament Simulation + Custom Matchups + Rabbit Hole |
+| `testng-sanity.xml` | Suite: Home + Sign Up + Login + Live Leaderboard + Tournament Simulation + Custom Matchups + Course Database + Rabbit Hole |
 | `data.properties` | Added `signup.*` keys |
 
 ## Home page – `HomePageTest`
@@ -212,6 +214,47 @@ Flow: sign in with a valid **username** (paid user) → hover TOOLS → click **
 Bug found while writing these tests (devbeta, Nov 2026): `POST /proxy/user/simulation/breakEven` and
 `POST /proxy/user/simulation/expectedValue` return **HTTP 500**, so Break-even Odds and Expected Value never appear.
 Also: the page code has an alert "Please select players", but it can never show – Run Simulation is disabled until every slot has a player.
+
+## Course Database – `CourseDatabaseTest`
+
+Flow: sign in with a valid **username** (paid user) → hover TOOLS → click **Course Database** (opens the current tournament's course).
+
+| ID | Type | Check |
+|---|---|---|
+| TC_CD_01 | Positive | Opens /course-stats/…, picker shows the course, tournament name, "Key Stats" title |
+| TC_CD_02 | Positive | Course Facts: key facts present, every fact has a value, Par 69–73, yards > 5000 |
+| TC_CD_03 | Positive | Correlated Courses listed, not including the course itself |
+| TC_CD_04 | Positive | Hole Stats: 11 columns, holes 1–18 in order |
+| TC_CD_05 | Data | Sum of hole pars = course Par in Course Facts |
+| TC_CD_06 | Data | Sum of hole yards = course length (within 1%; exact gap logged) |
+| TC_CD_07 | Data | Every hole: AVG +/- = AVG − Par |
+| TC_CD_08 | Data | Every hole: Eagles + Birdies + Pars + Bogeys + Doubles ≈ 100% |
+| TC_CD_09 | Data | Par 3/4/5, positive yards, unique positive ranks |
+| TC_CD_10 | Positive | 6 Hole Stats columns (data-driven): click sorts, 2nd click reverses |
+| TC_CD_11 | Positive | Course Metrics has the 11 categories |
+| TC_CD_12 | Positive | Each of the 11 categories (data-driven): 5-Year AVG, PGA Tour AVG, years newest first |
+| TC_CD_13 | Positive | Past Leaderboards title = tournament; years newest first; each has winner + score; newest selected |
+| TC_CD_14 | Positive | LEADERBOARD columns; players link to /golfer/ in a new tab |
+| TC_CD_15 | Data | Latest 3 years (data-driven): leaderboard #1 = winner and score shown in the year list |
+| TC_CD_16 | Positive | All Metrics shows SG columns; LEADERBOARD switches back |
+| TC_CD_17 | Positive | Player Search: last name in lower case finds the player; clearing restores |
+| TC_CD_18 | Positive | Course picker: many courses A–Z, typing filters |
+| TC_CD_19 | Positive | Switching course: URL, picker, tournament/facts change, 18 holes, pars add up |
+| TC_CD_20 | Positive | Opening a course URL directly shows that course |
+| TC_CD_N01 | Negative | Player Search no match → "No records found"; clearing removes it |
+| TC_CD_N02 | Negative | Script / SQL / special / 300-char Player Search: no alert, "No records found" |
+| TC_CD_N03 | Negative | Course picker no match → "No options" |
+| TC_CD_N04 | Negative | Unknown course URL should say "not found" / 404 — **fails on devbeta: blank page, HTTP 200** |
+| TC_CD_N05 | Edge | Browser title follows the course after switching — **fails on devbeta: title keeps the old course** |
+| TC_CD_N07 | Access | Logged-out visitor stays on the page but gets the subscriber banner ("…12 key stats and correlated courses are for subscribers", Subscribe button); no Hole Stats / Past Leaderboards |
+| TC_CD_N08 | Access | Free user: same subscriber banner, no course data |
+| TC_CD_N09 | Edge | Guest's Correlated Courses message names the current course — **fails on devbeta: always says "Aronimink-gc"** |
+
+Findings while writing these tests (devbeta, Nov 2026):
+- `/course-stats/<unknown-course>` returns **HTTP 200 with a blank page** instead of a 404 / "not found".
+- After choosing another course in the picker, the **browser title still shows the previous course**.
+- For logged-out visitors, the Correlated Courses message is **hard-coded to "Aronimink-gc"** whatever course is open.
+- Port Royal GC: hole yards add up to **6,821** but Course Facts say **6,828 yds** (Sea Island matches exactly).
 
 ## Notes
 
