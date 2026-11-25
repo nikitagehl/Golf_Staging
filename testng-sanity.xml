@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <!--
-    Whole-site sanity suite: Home page, Sign up, Login, Live Leaderboard, Rabbit Hole.
+    Whole-site sanity suite: Home page, Sign up, Login, Live Leaderboard, Tournament Simulation, Custom Matchups, Rabbit Hole.
     Run from IntelliJ (right-click > Run) or:  mvn clean test -Dsurefire.suiteXmlFiles=testng-sanity.xml
 -->
 <suite name="Betsperts Golf - Site Sanity" verbose="2">
@@ -33,6 +33,20 @@
     <test name="Live Leaderboard" preserve-order="true">
         <classes>
             <class name="com.nikitagehlod.testPages.LiveLeaderboardTest"/>
+        </classes>
+    </test>
+
+    <!-- TOOLS > Tournament Simulation (paid user): projections table OR "not available" state, search, sort, load more, CSV, access -->
+    <test name="Tournament Simulation" preserve-order="true">
+        <classes>
+            <class name="com.nikitagehlod.testPages.TournamentSimulatorTest"/>
+        </classes>
+    </test>
+
+    <!-- TOOLS > Custom Matchups (paid user): sizes, Sim Type, Ties, player picker, odds conversion, simulation, alerts, access -->
+    <test name="Custom Matchups" preserve-order="true">
+        <classes>
+            <class name="com.nikitagehlod.testPages.CustomMatchupTest"/>
         </classes>
     </test>
 

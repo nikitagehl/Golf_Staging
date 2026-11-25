@@ -17,6 +17,10 @@ Or right-click `testng-sanity.xml` in IntelliJ → Run.
 | `pages/PricePlanPage.java` | New: plan cards + GET PLAN |
 | `pages/LiveLeaderboardPage.java` | New: Live Leaderboard info block, tabs, rounds, display modes, search, sort, favourites filter, groups, CSV, paywall |
 | `testPages/LiveLeaderboardTest.java` | Live Leaderboard tests |
+| `pages/TournamentSimulatorPage.java` | New: Tournament Simulation – both page states, table, sort, search, Load More, CSV, side sections |
+| `testPages/TournamentSimulatorTest.java` | Tournament Simulation tests |
+| `pages/CustomMatchupPage.java` | New: Custom Matchups – desktop table + mobile cards, sizes, dropdowns, player picker, odds, results, alerts |
+| `testPages/CustomMatchupTest.java` | Custom Matchups tests |
 | `pages/SignUpPage.java` | New: sign-up form, validation toasts, change plan, legal links |
 | `pages/LoginPage.java` | Sign-in page: fields, toasts, show/hide password, forgot password, session check (`login()` / `login2()` kept) |
 | `utils/SiteUrls.java` | Base URL / path helper |
@@ -25,7 +29,7 @@ Or right-click `testng-sanity.xml` in IntelliJ → Run.
 | `basetest/commonToAllTest.java` | Added `openAsGuest(url)` |
 | `testPages/HomePageTest.java` | Home page tests |
 | `testPages/SignUpTest.java` | Sign-up tests |
-| `testng-sanity.xml` | Suite: Home + Sign Up + Login + Live Leaderboard + Rabbit Hole |
+| `testng-sanity.xml` | Suite: Home + Sign Up + Login + Live Leaderboard + Tournament Simulation + Custom Matchups + Rabbit Hole |
 | `data.properties` | Added `signup.*` keys |
 
 ## Home page – `HomePageTest`
@@ -136,6 +140,78 @@ Flow: sign in as the paid user → hover TOOLS → click **Live Leaderboard**. C
 | TC_LB_N09 | Negative | Free user: paywall, no table (expected rule – confirm with the team if it fails) |
 
 Not automated on purpose: clicking favourite stars and "Reset Favorites" (they change the paid account's saved favourites).
+
+## Tournament Simulation – `TournamentSimulatorTest`
+
+Flow: sign in with a valid **username** (paid user) → hover TOOLS → click **Tournament Simulation**.
+The page has two states: **projections published** (weekly, Tuesday until Thursday's tee-off) or **"not available"**.
+Tests for the state not on screen are **skipped** with the reason, so each run checks whatever the site shows that day.
+
+| ID | Type | State | Check |
+|---|---|---|---|
+| TC_TS_01 | Positive | both | TOOLS > Tournament Simulation opens the simulator (not /subscribe), browser title |
+| TC_TS_02 | Edge | both | Exactly one state is shown – projections OR the "not available" message |
+| TC_TS_03 | Positive | both | Title ends with "Betsperts Golf Projections" |
+| TC_TS_04 | Positive | both | Latest Articles: article links; "See All" → /fantasy-golf |
+| TC_TS_05 | Positive | both | DFS Golf Topics: /topic/ links |
+| TC_TS_E01 | Positive | no projections | Exact message + picture; no table, search or Download Projections |
+| TC_TS_P01 | Positive | projections | Title starts with the tournament name |
+| TC_TS_P02 | Positive | projections | Columns: Player, Win %, Top 5/10/20/30/40 %, Make Cut |
+| TC_TS_P03 | Positive | projections | Every row: player + /golfer/ link + 7 values 0.00%–100.00% |
+| TC_TS_P04 | Edge | projections | Win ≤ Top 5 ≤ Top 10 ≤ Top 20 ≤ Top 30 ≤ Top 40 ≤ Make Cut for every player |
+| TC_TS_P05 | Positive | projections | Default order Win % high → low |
+| TC_TS_P06 | Positive | projections | 7 % columns (data-driven): click sorts, second click reverses |
+| TC_TS_P07 | Positive | projections | Player column sorts A–Z / Z–A |
+| TC_TS_P08 | Edge | projections | 40 rows first; Load More +20; hidden when ≤ 40 players |
+| TC_TS_P09 | Positive | projections | Partial-name search filters; X icon clears |
+| TC_TS_P10 | Positive | projections | Download Projections: players-file.csv, header, one row per player |
+| TC_TS_P11 | Positive | projections | Player name opens /golfer/ page |
+| TC_TS_N01 | Negative | projections | No-match search → "No records found" + "There is no record…", no Load More |
+| TC_TS_N02 | Negative | projections | Script / SQL / special / 300-char search: no alert, "No records found" |
+| TC_TS_N03 | Edge | projections | Clearing a no-match search restores the list |
+| TC_TS_N04 | Negative | – | Logged-out visitor → /subscribe?tab=tournament-simulator&next=/tournament-simulator |
+| TC_TS_N05 | Negative | – | Free user → /subscribe?tab=tournament-simulator |
+
+Note: the projections view was not published on devbeta when these tests were written (Nov 2026); its tests are built
+from the page's own code and should be confirmed on the first Tuesday–Thursday run.
+
+## Custom Matchups – `CustomMatchupTest`
+
+Flow: sign in with a valid **username** (paid user) → hover TOOLS → click **Custom Matchups** ("Golf Custom Simulation").
+
+| ID | Type | Check |
+|---|---|---|
+| TC_CM_01 | Positive | Opens for a paid user (not /subscribe), browser title, heading |
+| TC_CM_02 | Positive | Default: Two players, Round, Void, empty pickers, "+120" / "2.2" placeholders, EV hint, Run button shown but disabled |
+| TC_CM_03 | Positive | Two/Three/Four/Five/Six (data-driven) → 2–6 player slots (Five only on wide screens) |
+| TC_CM_04 | Positive | Sim Type: Round / Event, switchable |
+| TC_CM_05 | Positive | Ties Treated as: Void / Loss, switchable |
+| TC_CM_06 | Positive | Tooltips explain Break-even Odds and Expected Value |
+| TC_CM_07 | Positive | Player picker: > 50 players, A–Z, no duplicates (378 on devbeta) |
+| TC_CM_08 | Positive | Typing filters, ignoring upper/lower case ("scott" → Scottie Scheffler …) |
+| TC_CM_09 | Positive | American → decimal: +120→2.200, -200→1.500, -110→1.909, +100→2.000, +250→3.500 |
+| TC_CM_10 | Positive | Decimal → American: 2.2→+120, 1.5→-200, 3.5→+250, 2→+100 |
+| TC_CM_11 | Positive | Run is enabled only once every player is chosen; 2-player run: Win % + Tie %, with Void the win chances add up to 100%, same tie % |
+| TC_CM_12 | Positive | Break-even Odds shown after a run — **fails on devbeta: /simulation/breakEven returns HTTP 500** |
+| TC_CM_13 | Positive | Expected Value "x per unit bet", green (+) / red (−) — **fails on devbeta: /simulation/expectedValue returns HTTP 500** |
+| TC_CM_14 | Positive | 3-player run: each player has Win %, total ≤ 100% |
+| TC_CM_15 | Positive | Sim Type "Event" also gives results |
+| TC_CM_E01 | Edge | Changing size empties all players |
+| TC_CM_E02 | Edge | Same player picked in a 2nd slot is moved (1st slot emptied) |
+| TC_CM_E03 | Edge | Picking a player clears odds typed before |
+| TC_CM_E04 | Edge | Odds are optional: run without odds still gives Win %, EV hint stays |
+| TC_CM_N01 | Negative | No players → Run Simulation disabled; clicking it does nothing (no results, no popup) |
+| TC_CM_N02 | Negative | Only Player #1 → Run stays disabled, clicking does nothing |
+| TC_CM_N03 | Negative | Three-player matchup with 2 players → Run stays disabled, clicking does nothing |
+| TC_CM_N04 | Negative | "abc" / "xyz" / "@#$" in odds → both odds boxes stay empty |
+| TC_CM_N05 | Negative | Picker with no match → "No options" |
+| TC_CM_N06 | Negative | Logged-out visitor → /subscribe?tab=matchup-tool&next=/custom-matchup-simulator |
+| TC_CM_N07 | Negative | Free user → /subscribe?tab=matchup-tool |
+| TC_CM_N08 | Edge | Changing the matchup size disables Run again |
+
+Bug found while writing these tests (devbeta, Nov 2026): `POST /proxy/user/simulation/breakEven` and
+`POST /proxy/user/simulation/expectedValue` return **HTTP 500**, so Break-even Odds and Expected Value never appear.
+Also: the page code has an alert "Please select players", but it can never show – Run Simulation is disabled until every slot has a player.
 
 ## Notes
 
