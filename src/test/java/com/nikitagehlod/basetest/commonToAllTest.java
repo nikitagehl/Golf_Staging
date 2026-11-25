@@ -29,9 +29,15 @@ public class commonToAllTest {
         // NOTE: no implicit wait on purpose. Implicit and explicit waits must not be mixed;
         // every wait in the page objects is an explicit WebDriverWait.
 
-        driver.get(propertyReader.readKey("URL").trim());
-
-        ((JavascriptExecutor) driver).executeScript("document.body.style.zoom='80%'");
+        // If devbeta is very slow this first load can time out. That must not fail the whole class:
+        // every test class opens its own page (and waits for it properly) right after this.
+        try {
+            driver.get(propertyReader.readKey("URL").trim());
+            ((JavascriptExecutor) driver).executeScript("document.body.style.zoom='80%'");
+        } catch (Exception slowFirstLoad) {
+            System.out.println("First page load in setup was slow / failed (" + slowFirstLoad.getClass().getSimpleName()
+                    + ") - continuing, the test class opens its own page next.");
+        }
     }
 
     /**

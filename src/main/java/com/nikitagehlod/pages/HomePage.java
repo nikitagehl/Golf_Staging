@@ -84,7 +84,9 @@ public class HomePage extends BasePage {
     @Step("Wait for home page to load")
     public HomePage waitForPageLoad() {
         waitForPageReady(); // reloads once if the site's spinner is stuck
-        waitForVisibility(featuredArticlesHeading);
+        // The articles come from the server with NO spinner; on a slow devbeta this takes ~20s,
+        // so this waits up to page.timeoutSeconds (45s) and reloads once before failing.
+        waitForPageContent(featuredArticlesHeading, "Home page 'Featured Articles'");
         return this;
     }
 
@@ -134,6 +136,28 @@ public class HomePage extends BasePage {
             // nothing to hover - the menu will close on the next action anyway
         }
         return names;
+    }
+
+    /** Hovers TOOLS and clicks one of its items, e.g. openToolsMenuItem("Live Leaderboard"). */
+    @Step("Open TOOLS > {item}")
+    public void openToolsMenuItem(String item) {
+        openMenuItem("TOOLS", item);
+    }
+
+    /** Hovers a top menu and clicks the dropdown item with this exact text (like a real user). */
+    @Step("Open {menu} > {item}")
+    public void openMenuItem(String menu, String item) {
+        waitForLoader();
+        WebElement menuLink = waitForFirstDisplayed(navMenu(menu));
+        com.nikitagehlod.utils.ClickHighlighter.showClick(driver, menuLink);
+        new Actions(driver).moveToElement(menuLink).perform();
+
+        By itemLink = By.xpath("(" + xpathOf(navMenu(menu)) + ")/following-sibling::div[contains(@class,'dropdown-menu')]"
+                + "//a[contains(@class,'dropdown-item') and normalize-space()=\"" + item + "\"]");
+        WebElement link = waitForFirstDisplayed(itemLink);
+        com.nikitagehlod.utils.ClickHighlighter.showClick(driver, link);
+        // move + click in one mouse action, so the hover menu cannot close in between
+        new Actions(driver).moveToElement(link).click().perform();
     }
 
     private static String xpathOf(By by) {

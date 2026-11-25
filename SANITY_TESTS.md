@@ -15,6 +15,8 @@ Or right-click `testng-sanity.xml` in IntelliJ → Run.
 |---|---|
 | `pages/HomePage.java` | Extended: header, menus, sections, theme, footer, link collection (old `clickLogin()` / `openRabbitHole()` kept) |
 | `pages/PricePlanPage.java` | New: plan cards + GET PLAN |
+| `pages/LiveLeaderboardPage.java` | New: Live Leaderboard info block, tabs, rounds, display modes, search, sort, favourites filter, groups, CSV, paywall |
+| `testPages/LiveLeaderboardTest.java` | Live Leaderboard tests |
 | `pages/SignUpPage.java` | New: sign-up form, validation toasts, change plan, legal links |
 | `pages/LoginPage.java` | Sign-in page: fields, toasts, show/hide password, forgot password, session check (`login()` / `login2()` kept) |
 | `utils/SiteUrls.java` | Base URL / path helper |
@@ -23,7 +25,7 @@ Or right-click `testng-sanity.xml` in IntelliJ → Run.
 | `basetest/commonToAllTest.java` | Added `openAsGuest(url)` |
 | `testPages/HomePageTest.java` | Home page tests |
 | `testPages/SignUpTest.java` | Sign-up tests |
-| `testng-sanity.xml` | Suite: Home + Sign Up + Login access |
+| `testng-sanity.xml` | Suite: Home + Sign Up + Login + Live Leaderboard + Rabbit Hole |
 | `data.properties` | Added `signup.*` keys |
 
 ## Home page – `HomePageTest`
@@ -98,6 +100,42 @@ Flow: Home → SIGN IN → "Sign Up Today!" → Price plan → GET PLAN → form
 | TC_LOGIN_N05 | Negative | Password with swapped letter case is rejected |
 
 Only **one** wrong-password attempt is made against the real paid account, so it cannot get locked.
+
+## Live Leaderboard – `LiveLeaderboardTest`
+
+Flow: sign in as the paid user → hover TOOLS → click **Live Leaderboard**. Checks are generic (no hard-coded tournament or players).
+
+| ID | Type | Check |
+|---|---|---|
+| TC_LB_01 | Positive | TOOLS > Live Leaderboard opens the table for a paid user, no paywall |
+| TC_LB_02 | Positive | Tournament name, "Course, City, Country", PAR (60–80), YARDAGE ("7005 yd") |
+| TC_LB_03 | Positive | Default view: 8 stat tabs, SG + Tournament + Average + Full Leaderboard selected, favourites off, CSV file name |
+| TC_LB_04 | Positive | SG columns in order: Score, Total, Pos, SG:TOT … SG:T2G |
+| TC_LB_05 | Positive | Every row: player, score, valid position (T5 / CUT / WD …), numeric SG:TOT, no duplicate players |
+| TC_LB_06 | Positive | 7 stat tabs (data-driven): tab selected, own key column + Score/Total/Pos, rows shown |
+| TC_LB_07 | Positive | Course Metrics: Year + Scoring AVG, no player positions; favourites + Rank/Average/Total + View-as options hidden |
+| TC_LB_08 | Positive | R1–R4 (data-driven): round selected, round column added |
+| TC_LB_09 | Positive | R3 never lists more players than R1 (the cut) |
+| TC_LB_10 | Positive | Rank = whole numbers ≥ 1, Average = 2 decimals, Total differs from Average |
+| TC_LB_11 | Positive | Partial, lower-case last-name search finds the player; all results match |
+| TC_LB_12 | Positive | Full-name search shows exactly that player |
+| TC_LB_13 | Positive | Clearing search restores the full field |
+| TC_LB_14 | Positive | Clicking SG:TOT sorts it; clicking again reverses the order |
+| TC_LB_15 | Positive | "Show Favorites Only (n)" shows exactly n starred players; untick restores |
+| TC_LB_16 | Positive | Player Groups: several non-empty groups; back to one table |
+| TC_LB_17 | Positive | CSV: Live-leaderboard.csv, Player column, same player count and first player as the table |
+| TC_LB_18 | Positive | SG:TOT header tooltip explains "Strokes gained" |
+| TC_LB_N01 | Negative | No-match search → "No records match your current search and filters", 0 rows |
+| TC_LB_N02 | Negative | 5 script / SQL / special-character searches: no alert, no rows, message shown |
+| TC_LB_N03 | Negative | 300-character search does not break the page |
+| TC_LB_N04 | Edge | Spaces-only search: all players or "No records" (devbeta shows none – possible bug, logged in report) |
+| TC_LB_N05 | Edge | Favourites-only + no-match search → "No records" |
+| TC_LB_N06 | Edge | Search text and filter are kept when switching tab / round |
+| TC_LB_N07 | Negative | Logged-out visitor: paywall + UPGRADE, no table |
+| TC_LB_N08 | Negative | Paywall "Log in" → sign-in page |
+| TC_LB_N09 | Negative | Free user: paywall, no table (expected rule – confirm with the team if it fails) |
+
+Not automated on purpose: clicking favourite stars and "Reset Favorites" (they change the paid account's saved favourites).
 
 ## Notes
 

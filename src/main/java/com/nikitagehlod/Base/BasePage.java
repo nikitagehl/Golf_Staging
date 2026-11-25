@@ -145,6 +145,46 @@ public class BasePage {
         }
     }
 
+    /**
+     * Max wait for page CONTENT that the site loads from its server without a spinner
+     * (e.g. the home page articles). "page.timeoutSeconds" in data.properties, default 45.
+     * devbeta's /proxy API calls sometimes take ~20s each.
+     */
+    public static long pageContentTimeoutSeconds() {
+        String v = com.nikitagehlod.utils.propertyReader.readKey("page.timeoutSeconds");
+        try {
+            return v == null ? 45 : Long.parseLong(v.trim());
+        } catch (NumberFormatException e) {
+            return 45;
+        }
+    }
+
+    /**
+     * Waits for a piece of page content; if it is not there in time, reloads the page ONCE and waits
+     * again. The final error says it was site slowness and lists the slowest server requests.
+     */
+    public WebElement waitForPageContent(By locator, String whatIsIt) {
+        Duration timeout = Duration.ofSeconds(pageContentTimeoutSeconds());
+        try {
+            return new WebDriverWait(driver, timeout).pollingEvery(Duration.ofMillis(300))
+                    .until(ExpectedConditions.visibilityOfElementLocated(locator));
+        } catch (TimeoutException firstTry) {
+            System.out.println(whatIsIt + " not shown after " + timeout.getSeconds() + "s on "
+                    + driver.getCurrentUrl() + " - reloading once. " + slowRequestsInfo());
+            driver.navigate().refresh();
+            waitForPageReady();
+            try {
+                return new WebDriverWait(driver, timeout).pollingEvery(Duration.ofMillis(300))
+                        .until(ExpectedConditions.visibilityOfElementLocated(locator));
+            } catch (TimeoutException secondTry) {
+                throw new TimeoutException(whatIsIt + " was still not shown after a reload ("
+                        + timeout.getSeconds() + "s each try) on " + driver.getCurrentUrl()
+                        + ". devbeta's server is answering slowly - site slowness, not a locator problem. "
+                        + slowRequestsInfo(), secondTry);
+            }
+        }
+    }
+
     /** Readable error for a stuck spinner, including the slowest server requests (for the dev team). */
     private String loaderStuckMessage(long seconds) {
         return "The site's loading spinner (.cmn-loader) was still showing after " + seconds + "s on "
