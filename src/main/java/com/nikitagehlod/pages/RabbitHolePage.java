@@ -45,7 +45,7 @@ public class RabbitHolePage extends BasePage {
             base += "/";
         }
         driver.get(base + "the-rabbit-hole");
-        waitForLoader();
+        waitForPageReady(); // reloads once if the site's spinner is stuck
     }
 
     // ------------------------------------------------------------- Filter panel

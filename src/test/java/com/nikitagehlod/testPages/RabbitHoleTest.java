@@ -2,6 +2,7 @@ package com.nikitagehlod.testPages;
 
 import com.nikitagehlod.basetest.commonToAllTest;
 import com.nikitagehlod.pages.*;
+import com.nikitagehlod.utils.SiteUrls;
 import com.nikitagehlod.utils.propertyReader;
 import io.qameta.allure.Allure;
 import org.testng.Assert;
@@ -35,18 +36,60 @@ public class RabbitHoleTest extends commonToAllTest {
         filtersAdded = new FiltersAdded(driver);
         manageReports = new ManageReports(driver);
 
+        // Normally this class starts in a fresh, logged-out browser -> the last branch logs in.
+        // The first two branches only matter if the browser already has a session.
+        if (loginPage.isLoggedIn() && isOnRabbitHole()) {
+            Allure.step("Already logged in as paid user on the Rabbit Hole - continuing without login");
+        } else if (loginPage.isLoggedIn()) {
+            Allure.step("Already logged in - click Rabbit Hole");
+            rabbitHolePage.navigateToRabbitHole();
+        } else {
+            loginAsPaidUserAndOpenRabbitHole();
+        }
+
+        // Logged in as somebody without Rabbit Hole access (e.g. free user left over) -> log in as paid user
+        if (!isOnRabbitHole()) {
+            Allure.step("Rabbit Hole not reachable with the current session - logging in as paid user");
+            openAsGuest(SiteUrls.of("/"));
+            loginAsPaidUserAndOpenRabbitHole();
+        }
+
+        mainTab = driver.getWindowHandle();
+    }
+
+    /**
+     * True when the Rabbit Hole TOOL is really open (paid access): the path is /the-rabbit-hole and the
+     * "Create Model" button is shown. A free user / guest is redirected to
+     * /subscribe?...&next=/the-rabbit-hole, which also contains the text, so the path is checked.
+     */
+    private boolean isOnRabbitHole() {
+        String path = java.net.URI.create(driver.getCurrentUrl()).getPath();
+        if (path == null || !path.startsWith("/the-rabbit-hole")) {
+            return false;
+        }
+        try {
+            return rabbitHolePage.isRabbitHoleDisplayed();
+        } catch (org.openqa.selenium.TimeoutException e) {
+            return false;
+        }
+    }
+
+    /** Runs when RabbitHoleTest is started on its own (or nobody is logged in yet). */
+    private void loginAsPaidUserAndOpenRabbitHole() {
+        // start from the home page, wherever the browser currently is
+        driver.get(SiteUrls.of("/"));
+        homePage.waitForPageLoad();
+
         Allure.step("Open Login Page");
         homePage.clickLogin();
 
         Allure.step("Login with Valid Credentials and paid credentials");
         loginPage.login(
-                propertyReader.readKey("ValidUsername"),
-                propertyReader.readKey("ValidPass"));
+                propertyReader.readKey("ValidUsername").trim(),
+                propertyReader.readKey("ValidPass").trim());
 
         Allure.step("Navigate to rabbit hole page");
         rabbitHolePage.navigateToRabbitHole();
-
-        mainTab = driver.getWindowHandle();
     }
 
     // ------------------------------------------------------------------ helpers

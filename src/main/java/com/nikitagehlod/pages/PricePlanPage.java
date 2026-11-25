@@ -31,7 +31,7 @@ public class PricePlanPage extends BasePage {
     @Step("Wait for price plan page to load")
     public PricePlanPage waitForPageLoad() {
         wait.until(d -> d.getCurrentUrl().contains("/price-plan"));
-        waitForLoader();
+        waitForPageReady(); // reloads once if the site's spinner is stuck
         waitForFirstDisplayed(getPlanButtons);
         return this;
     }

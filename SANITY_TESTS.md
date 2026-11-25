@@ -16,7 +16,7 @@ Or right-click `testng-sanity.xml` in IntelliJ → Run.
 | `pages/HomePage.java` | Extended: header, menus, sections, theme, footer, link collection (old `clickLogin()` / `openRabbitHole()` kept) |
 | `pages/PricePlanPage.java` | New: plan cards + GET PLAN |
 | `pages/SignUpPage.java` | New: sign-up form, validation toasts, change plan, legal links |
-| `pages/LoginPage.java` | Added `clickSignUpToday()` |
+| `pages/LoginPage.java` | Sign-in page: fields, toasts, show/hide password, forgot password, session check (`login()` / `login2()` kept) |
 | `utils/SiteUrls.java` | Base URL / path helper |
 | `utils/TestDataGenerator.java` | Unique username + email per run |
 | `utils/LinkChecker.java` | HTTP broken-link check |
@@ -74,6 +74,30 @@ Flow: Home → SIGN IN → "Sign Up Today!" → Price plan → GET PLAN → form
 | TC_SU_N05 | Negative | Spaces-only password → "Password is required!" |
 | TC_SU_N06 | Negative | Existing username rejected (stays off /subscription) |
 | TC_SU_N07 | Negative | Existing email rejected (stays off /subscription) |
+
+## Login – `LoginAccessTest`
+
+| ID | Type | Check |
+|---|---|---|
+| TC_LOGIN_01 | Positive | Title, subtitle, labels, placeholders, Sign IN disabled, password hidden, links shown |
+| TC_LOGIN_02 | Positive | SIGN IN in the header opens the sign-in page |
+| TC_LOGIN_03 | Positive | Sign IN enabled when both fields filled |
+| TC_LOGIN_04 | Positive | Eye icon shows/hides the password |
+| TC_LOGIN_05 | Positive | "Forgot Password?" → Reset Password page |
+| TC_LOGIN_06 | Positive | Valid username login → home page + session |
+| TC_LOGIN_07 | Positive | Valid email login works |
+| TC_LOGIN_08 | Positive | Session survives a page refresh |
+| TC_LOGIN_09 | Positive | `/sign-in?next=/tutorials` → back on /tutorials after login |
+| TC_LOGIN_10 | Positive | Rabbit Hole paywall "Sign in here" → paid user lands in the Rabbit Hole |
+| verifyFreeUser | Positive | Free user is sent to the Premium page from Rabbit Hole |
+| verifyPaidUser | Positive | Paid user can open the Rabbit Hole |
+| TC_LOGIN_N01 | Negative | Sign IN disabled for 3 empty-field combinations |
+| TC_LOGIN_N02 | Negative | Spaces-only username → "Username/Email is required!" |
+| TC_LOGIN_N03 | Negative | Spaces-only password → "Password is required!" |
+| TC_LOGIN_N04 | Negative | 6 wrong-credential cases (wrong password, unknown user/email, data.properties invalid creds, SQL-injection text, script tag) → error toast, not logged in |
+| TC_LOGIN_N05 | Negative | Password with swapped letter case is rejected |
+
+Only **one** wrong-password attempt is made against the real paid account, so it cannot get locked.
 
 ## Notes
 

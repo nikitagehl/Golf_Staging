@@ -83,7 +83,7 @@ public class HomePage extends BasePage {
 
     @Step("Wait for home page to load")
     public HomePage waitForPageLoad() {
-        waitForLoader();
+        waitForPageReady(); // reloads once if the site's spinner is stuck
         waitForVisibility(featuredArticlesHeading);
         return this;
     }

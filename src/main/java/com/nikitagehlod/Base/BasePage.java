@@ -114,9 +114,59 @@ public class BasePage {
 
     /** Waits until the loader is gone (passes immediately if it is not on the page). */
     public void waitForLoader() {
-//        wait.until(ExpectedConditions.invisibilityOfElementLocated(LOADER));
-        new WebDriverWait(driver, LOADER_TIMEOUT)
-                .until(ExpectedConditions.invisibilityOfElementLocated(LOADER));
+        try {
+            new WebDriverWait(driver, LOADER_TIMEOUT)
+                    .until(ExpectedConditions.invisibilityOfElementLocated(LOADER));
+        } catch (TimeoutException e) {
+            throw new TimeoutException(loaderStuckMessage(LOADER_TIMEOUT.getSeconds()), e);
+        }
+    }
+
+    /** First wait before a stuck page is reloaded (see waitForPageReady). */
+    private static final Duration PAGE_LOADER_FIRST_TRY = Duration.ofSeconds(30);
+
+    /**
+     * Use right after OPENING a page (driver.get / clicking a link to another page).
+     * The site shows its spinner (.cmn-loader) until its server calls answer, with no time limit.
+     * When devbeta's server is slow, a call can hang and the spinner never goes away - so if it is
+     * still there after 30s, the page is reloaded ONCE and we wait again (up to 45s).
+     * Do NOT use it in the middle of a flow (e.g. after Apply): a reload would lose the user's input.
+     */
+    public void waitForPageReady() {
+        try {
+            new WebDriverWait(driver, PAGE_LOADER_FIRST_TRY)
+                    .until(ExpectedConditions.invisibilityOfElementLocated(LOADER));
+        } catch (TimeoutException firstTry) {
+            System.out.println("Spinner still showing after " + PAGE_LOADER_FIRST_TRY.getSeconds()
+                    + "s on " + driver.getCurrentUrl() + " - reloading the page once. "
+                    + slowRequestsInfo());
+            driver.navigate().refresh();
+            waitForLoader();
+        }
+    }
+
+    /** Readable error for a stuck spinner, including the slowest server requests (for the dev team). */
+    private String loaderStuckMessage(long seconds) {
+        return "The site's loading spinner (.cmn-loader) was still showing after " + seconds + "s on "
+                + driver.getCurrentUrl() + ". devbeta's server did not answer in time - this is site "
+                + "slowness, not a locator problem. " + slowRequestsInfo();
+    }
+
+    /** The 5 slowest finished requests of the current page (only requests that took over 3s). */
+    private String slowRequestsInfo() {
+        try {
+            Object info = ((JavascriptExecutor) driver).executeScript(
+                    "return performance.getEntriesByType('resource')"
+                            + ".filter(function(r){return r.duration > 3000;})"
+                            + ".sort(function(a,b){return b.duration - a.duration;}).slice(0,5)"
+                            + ".map(function(r){return Math.round(r.duration/1000) + 's ' + r.name.split('?')[0];})"
+                            + ".join(' | ');");
+            String text = String.valueOf(info);
+            return text.isBlank() ? "No finished request took over 3s (a request may still be pending)."
+                    : "Slow requests: " + text;
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     /**

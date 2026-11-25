@@ -9,6 +9,11 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Listeners;
 
+/**
+ * A FRESH browser for every test class: opened before the class, closed after it.
+ * Every class starts clean (logged out, one tab), so a failure in one class cannot
+ * break the next one, and any class can also be run on its own.
+ */
 @Listeners(TestListener.class)
 public class commonToAllTest {
 
@@ -49,6 +54,7 @@ public class commonToAllTest {
         }
     }
 
+    /** Closes the browser after each test class. */
     @AfterClass(alwaysRun = true)
     public void tearDown() {
         driverManager.down();

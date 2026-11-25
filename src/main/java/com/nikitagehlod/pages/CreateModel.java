@@ -48,12 +48,34 @@ public class CreateModel extends BasePage {
         switchToNewWindow(handlesBefore);
     }
 
+    /** The Create Model page loads a lot of data; on devbeta it sometimes needs more than 15s. */
+    private static final int MODEL_PAGE_TIMEOUT_SECONDS = 30;
+
+    /**
+     * Waits for the Create Model page (new tab) to be ready: loader gone + "Model Name" box visible.
+     * If it is still not there after 30s, the tab is refreshed ONCE and we wait again
+     * (a slow / half-loaded tab was the cause of the TimeoutException in DeleteReport).
+     */
     @Description("Verify Create button should open the create model page.")
     public void waitForModelPage() {
 
-        waitForVisibility(modelName);
+        try {
+            waitForModelNameBox();
+        } catch (TimeoutException firstTry) {
+            System.out.println("Create Model page not ready after " + MODEL_PAGE_TIMEOUT_SECONDS
+                    + "s (" + driver.getCurrentUrl() + ") - refreshing the tab once.");
+            driver.navigate().refresh();
+            waitForModelNameBox();
+        }
 
         ((JavascriptExecutor) driver).executeScript("document.body.style.zoom='70%'");
+    }
+
+    private void waitForModelNameBox() {
+        waitForLoader();
+        new WebDriverWait(driver, Duration.ofSeconds(MODEL_PAGE_TIMEOUT_SECONDS))
+                .pollingEvery(Duration.ofMillis(300))
+                .until(ExpectedConditions.visibilityOfElementLocated(modelName));
     }
 
     @Description("Check the Report name input box clickable and enter the report name")

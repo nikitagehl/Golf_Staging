@@ -7,7 +7,9 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -86,9 +88,26 @@ public class ManageReports extends BasePage {
 
         clickActionIcon(row, "Remove");
 
+        // Copy asks "Yes / No" before it runs - if Delete does the same, confirm it
+        confirmDialogIfShown();
+
         wait.until(ExpectedConditions.numberOfElementsToBeLessThan(ROWS, beforeCount));
 
         System.out.println("Report deleted successfully.");
+    }
+
+    /** Clicks "Yes" in the confirmation popup when one appears within 3s; does nothing otherwise. */
+    private void confirmDialogIfShown() {
+        By yesButton = By.xpath("//div[@class='modal-footer']//button[normalize-space()='Yes']");
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(3))
+                    .until(ExpectedConditions.elementToBeClickable(yesButton))
+                    .click();
+            wait.until(ExpectedConditions.invisibilityOfElementLocated(By.xpath("//div[@role='dialog']")));
+            waitForLoader();
+        } catch (org.openqa.selenium.TimeoutException noDialog) {
+            // no confirmation popup for this action - nothing to do
+        }
     }
 
     public void CopyReport() {

@@ -68,7 +68,7 @@ public class SignUpPage extends BasePage {
     @Step("Wait for sign-up page to load")
     public SignUpPage waitForPageLoad() {
         wait.until(d -> d.getCurrentUrl().contains("/sign-up"));
-        waitForLoader();
+        waitForPageReady(); // reloads once if the site's spinner is stuck
         waitForVisibility(usernameField);
         return this;
     }
