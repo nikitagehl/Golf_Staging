@@ -1,6 +1,7 @@
 package com.nikitagehlod.pages;
 
 import com.nikitagehlod.Base.BasePage;
+import com.nikitagehlod.utils.propertyReader;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.FindBy;
@@ -9,171 +10,95 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
-public class RabbitHolePage  extends BasePage {
-    WebDriver driver;
-    WebDriverWait wait;
+public class RabbitHolePage extends BasePage {
 
-    public RabbitHolePage( WebDriver driver) {
+    private static final By FILTER_COLUMNS = By.xpath("//div[@class='col filter-column']");
+    private static final By TABLE_ROWS = By.xpath("//table//tbody/tr");
+    private static final By NO_DATA = By.xpath("//h5[contains(text(),'No records found')]");
+    private static final By APPLY_BTN = By.xpath("//button[normalize-space()='Apply']");
+    private static final By PLUS_ICON =
+            By.xpath(".//img[@alt='Add Column to your custom report']");
+
+    @FindBy(xpath = "//div[@class='btn btn-bar d-flex position-relative align-items-center']")
+    private WebElement filterButton;
+
+    private final By createModelButton = By.xpath("//a[text()='Create Model']");
+
+    private final Random random = new Random();
+
+    public RabbitHolePage(WebDriver driver) {
         super(driver);
-       this.driver= driver;
-
-        wait = new WebDriverWait(driver,
-                Duration.ofSeconds(10));
-
         PageFactory.initElements(driver, this);
     }
 
-    @FindBy(xpath = "//div[@class='btn btn-bar d-flex position-relative align-items-center']")
-    WebElement filterButton;
-
-    private By createModelButton =
-            By.xpath("//a[text()='Create Model']");
-
-    public boolean isRabbitHoleDisplayed(){
-
-        return wait.until(ExpectedConditions.visibilityOfElementLocated(createModelButton))
-                .isDisplayed();
-
+    public boolean isRabbitHoleDisplayed() {
+        return waitForVisibility(createModelButton).isDisplayed();
     }
 
+    /** Opens the Rabbit Hole page using the base URL from data.properties (no hardcoded host). */
     public void navigateToRabbitHole() {
-
-        driver.get(
-                "https://devbeta.betspertsgolf.com/the-rabbit-hole");
-
-
-    }
-
-
-
-    public void clickFilterButton() {
+        String base = propertyReader.readKey("URL").trim();
+        if (!base.endsWith("/")) {
+            base += "/";
+        }
+        driver.get(base + "the-rabbit-hole");
         waitForLoader();
-        wait.until(
-                        ExpectedConditions.elementToBeClickable(
-                                filterButton))
-                .click();
-
     }
 
-    public void enterDescription(
-            String description) {
-        type(
-                By.xpath("//textarea[@placeholder='Enter Description']"),
-                description);
+    // ------------------------------------------------------------- Filter panel
 
-    }
+    /**
+     * Opens the filter panel ONLY if it is not already open.
+     * The old clickFilterButton() always clicked, so when the panel was already open
+     * the click closed it and the next step failed (this was one cause of the flaky
+     * "Close" locator error).
+     */
+    public void openFilterPanel() {
+        waitForLoader();
 
-    public void clickAdd() {
-        WebElement addButton = waitForVisibility(
-                By.xpath("//button[normalize-space()='ADD']"));
+        if (isDisplayedNow(FILTER_COLUMNS)) {
+            return;
+        }
 
-        safeClick(addButton);
-
-        scrollToTop();
-    }
-
-    public boolean verifyToast() {
-
-        return wait.until(
-                        ExpectedConditions.visibilityOfElementLocated(
-                                By.xpath(
-                                        "//*[contains(text(),'Your column settings has been saved')]")))
-                .isDisplayed();
-
+        wait.until(ExpectedConditions.elementToBeClickable(filterButton)).click();
+        wait.until(d -> isDisplayedNow(FILTER_COLUMNS));
     }
 
     public void clickApply() {
-        driver.findElement(
-                        By.xpath("//button[normalize-space()='Apply']")
-                )
-                .click();
-        waitForLoader();
-    }
 
+        // remember a row of the CURRENT table so we can tell when the new result replaces it
+        WebElement oldFirstRow = driver.findElements(TABLE_ROWS).stream().findFirst().orElse(null);
 
-    public void selectRandomDropdownOption(String dropdownLabel) {
+        safeClick(waitForClickable(APPLY_BTN));
+        waitForLoaderCycle();
 
-        waitForLoader();
-
-        WebElement dropdown = wait.until(
-                ExpectedConditions.elementToBeClickable(
-                        By.xpath("//label[normalize-space()='" + dropdownLabel + "']/following::button[1]")
-                ));
-        scrollIntoView(dropdown);
-
-        dropdown.click();
-
-        // Wait until the dropdown is visible
-        By optionLocator = By.xpath(
-                "//div[contains(@class,'dropdown-menu') and contains(@class,'show')]//button");
-
-        wait.until(ExpectedConditions.visibilityOfElementLocated(optionLocator));
-
-        // Get all options
-        List<WebElement> options = driver.findElements(optionLocator);
-        Random random = new Random();
-        int index = random.nextInt(options.size());
-        WebElement option = options.get(index);
-
-        // Scroll the selected option into view
-        scrollIntoView(option);
-        wait.until(ExpectedConditions.elementToBeClickable(option));
-        System.out.println("Selected Option : " + option.getText());
-        Actions actions = new Actions(driver);
-        actions.moveToElement(option).pause(Duration.ofMillis(300)).click().perform();
-//        option.click();
-//        waitForLoader();
-        scrollToTop();
-    }
-    public String clickRandomPlus() {
-
-        List<WebElement> headers = wait.until(
-                ExpectedConditions.visibilityOfAllElementsLocatedBy(
-                        By.xpath("//table//thead//th[.//img[@alt='Add Column to your custom report']]")));
-
-        Random random = new Random();
-        WebElement header = headers.get(random.nextInt(headers.size()));
-
-        String headerName = header.getText().trim();
-
-        List<WebElement> plusIcons = header.findElements(
-                By.xpath(".//img[@alt='Add Column to your custom report']"));
-
-        for (WebElement plus : plusIcons) {
-            if (plus.isDisplayed()) {
-                wait.until(ExpectedConditions.elementToBeClickable(plus)).click();
-                break;
+        if (oldFirstRow != null) {
+            try {
+                new WebDriverWait(driver, Duration.ofSeconds(3))
+                        .until(ExpectedConditions.stalenessOf(oldFirstRow));
+            } catch (TimeoutException ignored) {
+                // table was updated in place (same row elements) - nothing more to wait for
             }
         }
-        return headerName;
     }
 
-        private By noDataMessage =
-                By.xpath("//h5[contains(text(),'No records found')]");
+    // ------------------------------------------------------------------- Table
 
-        public boolean isNoDataFound() {
+    public boolean isNoDataFound() {
+        return isDisplayedNow(NO_DATA);
+    }
 
-            return !getElements(noDataMessage).isEmpty();
-        }
-
-
+    /**
+     * Waits until the table shows rows OR the "No records found" message, then reports
+     * whether data is available. Call it ONCE per Apply and store the result.
+     */
     public boolean verifyTableLoaded() {
-         By noDataMessage = By.xpath("//h5[contains(text(),'No records found')]");
 
-        // Table
-         By tableRows = By.xpath("//table//tbody/tr");
-
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
-
-        wait.until(driver ->
-                driver.findElements(tableRows).size() > 0 ||
-                        driver.findElements(noDataMessage).size() > 0
-        );
+        new WebDriverWait(driver, Duration.ofSeconds(45))
+                .until(d -> !d.findElements(TABLE_ROWS).isEmpty() || isDisplayedNow(NO_DATA));
 
         if (isNoDataFound()) {
             System.out.println("No records available.");
@@ -184,7 +109,82 @@ public class RabbitHolePage  extends BasePage {
         return true;
     }
 
+    // --------------------------------------------------------------- Dropdowns
 
+    public void selectRandomDropdownOption(String dropdownLabel) {
 
+        waitForLoader();
 
+        WebElement dropdown = wait.until(
+                ExpectedConditions.elementToBeClickable(
+                        By.xpath("//label[normalize-space()='" + dropdownLabel
+                                + "']/following::button[1]")));
+
+        safeClick(dropdown);
+
+        By optionLocator = By.xpath(
+                "//div[contains(@class,'dropdown-menu') and contains(@class,'show')]//button");
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(optionLocator));
+
+        List<WebElement> options = driver.findElements(optionLocator);
+        WebElement option = options.get(random.nextInt(options.size()));
+
+        scrollIntoView(option);
+        wait.until(ExpectedConditions.elementToBeClickable(option));
+
+        System.out.println("Selected Option (" + dropdownLabel + ") : " + option.getText());
+
+        new Actions(driver)
+                .moveToElement(option)
+                .pause(Duration.ofMillis(300))
+                .click()
+                .perform();
+
+        waitForLoaderCycle();
+        scrollToTop();
+    }
+
+    // ----------------------------------------------------------- Add column flow
+
+    public String clickRandomPlus() {
+
+        List<WebElement> headers = wait.until(
+                ExpectedConditions.visibilityOfAllElementsLocatedBy(
+                        By.xpath("//table//thead//th[.//img[@alt='Add Column to your custom report']]")));
+
+        WebElement header = headers.get(random.nextInt(headers.size()));
+
+        scrollIntoView(header);
+        String headerName = header.getText().trim();
+
+        WebElement plus = header.findElements(PLUS_ICON).stream()
+                .filter(WebElement::isDisplayed)
+                .findFirst()
+                .orElseThrow(() -> new NoSuchElementException(
+                        "No visible '+' icon found in column: " + headerName));
+
+        safeClick(plus);
+
+        return headerName;
+    }
+
+    public void enterDescription(String description) {
+        type(By.xpath("//textarea[@placeholder='Enter Description']"), description);
+    }
+
+    public void clickAdd() {
+        WebElement addButton = waitForVisibility(By.xpath("//button[normalize-space()='ADD']"));
+
+        safeClick(addButton);
+
+        scrollToTop();
+    }
+
+    /** Call ONCE: the toast disappears after a few seconds, a second call can time out. */
+    public boolean verifyToast() {
+        return waitForVisibility(
+                By.xpath("//*[contains(text(),'Your column settings has been saved')]"))
+                .isDisplayed();
+    }
 }

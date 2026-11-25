@@ -1,0 +1,1 @@
+{"uuid":"593e617c-30ba-47a2-9a63-94c000aa4200","name":"verifyLegalLinks","children":["4a89c4b8-5871-48bd-98c5-3c33613efa02","6be75fb9-2aea-4f68-a50b-a647bcc98673"],"befores":[{"name":"legalLinks","status":"passed","stage":"finished","steps":[],"attachments":[],"parameters":[],"start":1795592399459,"stop":1795592399465}],"afters":[],"start":1795592399459,"stop":1795592577838}

@@ -4,6 +4,7 @@ import com.nikitagehlod.Base.BasePage;
 import io.qameta.allure.Description;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
@@ -14,128 +15,104 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 
-
-
-
 public class CreateModel extends BasePage {
-
-    WebDriver driver;
-
-    public CreateModel(WebDriver driver) {
-        super(driver);
-        this.driver = driver;
-
-        PageFactory.initElements(driver, this);
-    }
-
-    // Locators
 
     private final By createModelBtn =
             By.xpath("//a[contains(@href,'custom-ranking-report-setting')]");
 
-    private final By modelName =
-            By.xpath("//input[@placeholder='Model Name']");
+    private final By modelName = By.xpath("//input[@placeholder='Model Name']");
 
     private final By generateModelBtn =
             By.xpath("//button[normalize-space()='Save and Generate Model']");
 
-    // Click Create Model
+    private final By removeIcon = By.cssSelector("div.remove-icon");
 
-    @Description("Verify Create button is visible and clickable ")
+    public CreateModel(WebDriver driver) {
+        super(driver);
+        PageFactory.initElements(driver, this);
+    }
 
+    /** Clicks "Create Model" on the RH page and switches to the tab it opens. */
+    @Description("Verify Create button is visible and clickable")
     public void clickCreateModel() {
 
         waitForLoader();
 
-        String parentTab = driver.getWindowHandle();
-
         WebElement button = waitForClickable(createModelBtn);
+
+        // capture the open tabs BEFORE the click, so we can find the NEW one afterwards
+        Set<String> handlesBefore = driver.getWindowHandles();
 
         safeClick(button);
 
-        wait.until(driver -> driver.getWindowHandles().size() > 1);
-
-        switchToNewTab(parentTab);
+        switchToNewWindow(handlesBefore);
     }
 
-    // Wait until page loads
-
-    @Description("Verify Create button should open the createmodel page.")
+    @Description("Verify Create button should open the create model page.")
     public void waitForModelPage() {
 
         waitForVisibility(modelName);
 
-        ((JavascriptExecutor) driver)
-                .executeScript("document.body.style.zoom='70%'");
+        ((JavascriptExecutor) driver).executeScript("document.body.style.zoom='70%'");
     }
 
-    // Enter Model Name
-
-
     @Description("Check the Report name input box clickable and enter the report name")
-
     public void enterModelName(String model) {
-
         type(modelName, model);
     }
 
-    // Save and Generate
-
-
-
-      @Description("Verify generate report clickable and generate the report ")
+    /**
+     * Clicks "Save and Generate Model". If the app opens the result in a new tab we switch
+     * to it, otherwise we stay on the current tab.
+     * (Old code waited for "more than 1 tab" which was already true, so it never really
+     * waited and could switch to the wrong tab.)
+     */
+    @Description("Verify generate report clickable and generate the report")
     public void clickGenerateModel() {
 
         waitForLoader();
 
         WebElement button = waitForVisibility(generateModelBtn);
 
+        Set<String> handlesBefore = driver.getWindowHandles();
+        String urlBefore = driver.getCurrentUrl();
+
         safeClick(button);
 
-        String parentTab = driver.getWindowHandle();
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(15)).until(d ->
+                    d.getWindowHandles().size() > handlesBefore.size()
+                            || !d.getCurrentUrl().equals(urlBefore));
+        } catch (TimeoutException e) {
+            System.out.println("No new tab / page change after 'Save and Generate Model'.");
+        }
 
-        wait.until(driver -> driver.getWindowHandles().size() > 1);
-
-        switchToNewTab(parentTab);
-    }
-
-    // Reusable Tab Switch
-
-    private void switchToNewTab(String parentTab) {
-
-        Set<String> tabs = driver.getWindowHandles();
-
-        for (String tab : tabs) {
-
-            if (!tab.equals(parentTab)) {
-
-                driver.switchTo().window(tab);
-
-                break;
-            }
+        if (driver.getWindowHandles().size() > handlesBefore.size()) {
+            switchToNewWindow(handlesBefore);
         }
     }
 
-    public void delete_one(String ColumnName) {
-        By removeIcon = By.xpath(
-                "//tr[td[contains(.,+)]]//div[contains(@class,'remove-icon')]");
-
-        click(removeIcon);
-
-    }
-
-
-    private By removeIcon = By.cssSelector("div.remove-icon");
-
+    /** Removes the first saved column. Returns true when the number of columns went down. */
     @Description("Check the remove icon delete the saved column")
-        public void clickFirstRemoveIcon() {
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    public boolean clickFirstRemoveIcon() {
 
-            List<WebElement> icons = wait.until(
-                    ExpectedConditions.visibilityOfAllElementsLocatedBy(removeIcon));
+        List<WebElement> icons = wait.until(
+                ExpectedConditions.visibilityOfAllElementsLocatedBy(removeIcon));
 
-            icons.get(0).click();
+        int before = icons.size();
 
+        safeClick(icons.get(0));
+
+        boolean removed = true;
+        try {
+            new WebDriverWait(driver, Duration.ofSeconds(5))
+                    .until(d -> d.findElements(removeIcon).size() < before);
+        } catch (TimeoutException e) {
+            removed = false;
+            System.out.println("Column count did not change after clicking remove.");
+        }
+
+        waitForLoader();
+        return removed;
     }
-
 }

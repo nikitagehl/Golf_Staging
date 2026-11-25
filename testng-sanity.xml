@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!--
+    Whole-site sanity suite.
+    Run from IntelliJ (right-click > Run) or:  mvn clean test -Dsurefire.suiteXmlFiles=testng-sanity.xml
+-->
+<suite name="Betsperts Golf - Site Sanity" verbose="2">
+
+    <listeners>
+        <!-- re-runs a test once if it failed only because of a Selenium timeout (retry.count in data.properties) -->
+        <listener class-name="listeners.RetryOnTimeout"/>
+    </listeners>
+
+    <test name="Home Page" preserve-order="true">
+        <classes>
+            <class name="com.nikitagehlod.testPages.HomePageTest"/>
+        </classes>
+    </test>
+
+    <test name="Sign Up" preserve-order="true">
+        <classes>
+            <class name="com.nikitagehlod.testPages.SignUpTest"/>
+        </classes>
+    </test>
+
+    <test name="Login and Rabbit Hole access" preserve-order="true">
+        <classes>
+            <class name="com.nikitagehlod.testPages.LoginAccessTest"/>
+        </classes>
+    </test>
+
+</suite>

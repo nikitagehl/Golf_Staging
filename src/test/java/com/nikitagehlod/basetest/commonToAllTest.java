@@ -1,58 +1,56 @@
 package com.nikitagehlod.basetest;
 
-import com.nikitagehlod.testPages.RabbitHoleTest;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Logger;
+import com.nikitagehlod.driver.driverManager;
+import com.nikitagehlod.utils.propertyReader;
+import listeners.TestListener;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import com.nikitagehlod.utils.propertyReader;
+import org.testng.annotations.Listeners;
 
-import java.time.Duration;
-
+@Listeners(TestListener.class)
 public class commonToAllTest {
-//    protected WebDriver driver;
-
-
 
     protected WebDriver driver;
 
-    public WebDriver getDriver() {
-        return driver;
-    }
-
-    @BeforeClass
+    @BeforeClass(alwaysRun = true)
     public void setup() {
-//        logger.info("Starting the test");
-        driver = new ChromeDriver();
 
-        driver.manage().window().maximize();
+        // One place creates the browser, so TestListener can also reach it for screenshots.
+        driverManager.init();
+        driver = driverManager.getDriver();
 
+        // NOTE: no implicit wait on purpose. Implicit and explicit waits must not be mixed;
+        // every wait in the page objects is an explicit WebDriverWait.
 
-        driver.manage().timeouts()
-                .implicitlyWait(Duration.ofSeconds(10));
+        driver.get(propertyReader.readKey("URL").trim());
 
-        driver.get(propertyReader.readKey("URL"));
-
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-
-        js.executeScript("document.body.style.zoom='80%'");
+        ((JavascriptExecutor) driver).executeScript("document.body.style.zoom='80%'");
     }
 
-    @AfterClass
-    public void tearDown() {
-
-        if(driver != null) {
-            driver.quit();
+    /**
+     * Opens the URL as a logged-out guest: clears cookies + local/session storage, then reloads.
+     * Use it in @BeforeMethod so one test cannot leave the next one logged in.
+     */
+    protected void openAsGuest(String url) {
+        driver.manage().deleteAllCookies();
+        driver.get(url);
+        try {
+            // Reload only when a login was actually stored - saves one full page load per test.
+            Object wasLoggedIn = ((JavascriptExecutor) driver).executeScript(
+                    "var had = !!(localStorage.getItem('session_key') || localStorage.getItem('user_profile'));"
+                            + " localStorage.clear(); sessionStorage.clear(); return had;");
+            if (Boolean.TRUE.equals(wasLoggedIn)) {
+                driver.navigate().refresh();
+            }
+        } catch (Exception ignored) {
+            // storage not available on this page - cookies were already cleared
         }
     }
 
-
-
-
-
+    @AfterClass(alwaysRun = true)
+    public void tearDown() {
+        driverManager.down();
+    }
 }

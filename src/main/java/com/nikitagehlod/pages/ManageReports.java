@@ -5,131 +5,97 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.PageFactory;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
-
-import java.time.Duration;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class ManageReports extends BasePage {
 
-    WebDriver driver;
-    WebDriverWait wait;
+    private static final String ROWS_XPATH =
+            "//div[normalize-space()='Manage Models']"
+                    + "/following-sibling::div[contains(@class,'table-report-setting')]//tbody/tr";
 
-    public ManageReports(WebDriver driver){
+    private static final By ROWS = By.xpath(ROWS_XPATH);
+
+    /** Reports created by the automation contain this text; they are preferred for delete/copy/toggle. */
+    private static final String AUTOMATION_TAG = "Automation";
+
+    private final Random random = new Random();
+
+    public ManageReports(WebDriver driver) {
         super(driver);
-        this.driver= driver;
-        wait = new WebDriverWait(driver,
-                Duration.ofSeconds(10));
-
         PageFactory.initElements(driver, this);
     }
 
+    public void goToModelsTable() {
 
-    public void goToModelsTable(){
-        WebElement manageModels = new WebDriverWait(driver, Duration.ofSeconds(10))
-                .until(ExpectedConditions.presenceOfElementLocated(
-                        By.xpath("//div[normalize-space()='Manage Models']")));
+        WebElement manageModels = waitForPresence(
+                By.xpath("//div[normalize-space()='Manage Models']"));
 
-// Scroll to it
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-
-        js.executeScript(
+        ((JavascriptExecutor) driver).executeScript(
                 "arguments[0].scrollIntoView({behavior:'instant', block:'start'});",
                 manageModels);
-
-// Wait a little for scroll animation/layout
-
     }
+
     private List<WebElement> getReportRows() {
 
         goToModelsTable();
 
-        By rowLocator = By.xpath(
-                "//div[normalize-space()='Manage Models']" +
-                        "/following-sibling::div[contains(@class,'table-report-setting')]//tbody/tr");
-
-        List<WebElement> rows = wait.until(
-                ExpectedConditions.visibilityOfAllElementsLocatedBy(rowLocator));
-
-        if (rows.isEmpty()) {
-            throw new RuntimeException("No reports available.");
-        }
-
-        return rows;
+        return wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(ROWS));
     }
-    private WebElement getRandomRow() {
 
-        List<WebElement> rows = getReportRows();
+    /**
+     * Picks a random row. Rows created by the automation ("Automation Report ...") are
+     * preferred so the test does not delete / change real reports of the account.
+     */
+    private WebElement pickRandomRow(List<WebElement> rows) {
 
-        Random random = new Random();
+        List<WebElement> own = rows.stream()
+                .filter(r -> getReportName(r).contains(AUTOMATION_TAG))
+                .collect(Collectors.toList());
 
-        return rows.get(random.nextInt(rows.size()));
+        List<WebElement> pool = own.isEmpty() ? rows : own;
+
+        return pool.get(random.nextInt(pool.size()));
     }
+
     private String getReportName(WebElement row) {
-
         return row.findElement(By.xpath("./td[2]")).getText();
     }
+
     private void clickActionIcon(WebElement row, String iconName) {
 
-        WebElement icon = row.findElement(
-                By.xpath(".//img[@alt='" + iconName + "']"));
+        WebElement icon = row.findElement(By.xpath(".//img[@alt='" + iconName + "']"));
 
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center'});",
-                icon);
-
-        wait.until(ExpectedConditions.elementToBeClickable(icon));
-
-        icon.click();
+        safeClick(icon);
     }
 
-    public void DeleteReport(){
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        goToModelsTable();
-//
-        WebElement row = getRandomRow();
+    public void DeleteReport() {
+
+        waitForLoader();
+
+        List<WebElement> rows = getReportRows();
+        int beforeCount = rows.size();
+
+        WebElement row = pickRandomRow(rows);
 
         System.out.println("Deleting : " + getReportName(row));
 
-        int beforeCount = getReportRows().size();
-
         clickActionIcon(row, "Remove");
 
-        wait.until(ExpectedConditions.numberOfElementsToBeLessThan(
-                By.xpath("//div[normalize-space()='Manage Models']/following-sibling::div[contains(@class,'table-report-setting')]//tbody/tr"),
-                beforeCount));
+        wait.until(ExpectedConditions.numberOfElementsToBeLessThan(ROWS, beforeCount));
 
         System.out.println("Report deleted successfully.");
     }
-    public void verifyCopySuccessToast() {
 
-        WebElement toast = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                        By.xpath("//div[@role='status']")));
+    public void CopyReport() {
 
-        System.out.println("Toast : " + toast.getText());
+        waitForLoader();
 
-        wait.until(ExpectedConditions.invisibilityOf(toast));
-    }
-
-    public void CopyReport(){
-
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        goToModelsTable();
-        WebElement row = getRandomRow();
+        WebElement row = pickRandomRow(getReportRows());
 
         System.out.println("Copying : " + getReportName(row));
 
@@ -142,36 +108,21 @@ public class ManageReports extends BasePage {
         wait.until(ExpectedConditions.invisibilityOfElementLocated(
                 By.xpath("//div[@role='dialog']")));
 
-//        verifyCopySuccessToast();
-
         waitForLoader();
-        System.out.println("Report copied successfully.");
 
+        System.out.println("Report copied successfully.");
     }
 
+    public void ChangeReportStatus() {
 
+        waitForLoader();
 
-    public void ChangeReportStatus(){
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        goToModelsTable();
-
-        WebElement row = getRandomRow();
+        WebElement row = pickRandomRow(getReportRows());
 
         System.out.println("Changing Status : " + getReportName(row));
 
-        WebElement toggle = row.findElement(
-                By.xpath(".//label[contains(@class,'switch')]"));
+        WebElement toggle = row.findElement(By.xpath(".//label[contains(@class,'switch')]"));
 
-        ((JavascriptExecutor) driver).executeScript(
-                "arguments[0].scrollIntoView({block:'center'});",
-                toggle);
-
-        wait.until(ExpectedConditions.elementToBeClickable(toggle));
-
-        toggle.click();
+        safeClick(toggle);
     }
 }
